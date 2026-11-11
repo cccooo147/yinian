@@ -47,6 +47,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/gradle.ps1 -Task ver
 
 `verify` 会跑单元测试、lint、release 构建、签名与 zipalign 校验。
 
+数据格式、发布流程和踩过的坑都记在 [docs/维护笔记.md](docs/维护笔记.md)。
+
 ## 已知限制
 
 - 没有真机自动化验收，滑动手感、键盘遮挡、字体缩放都靠人工试用
