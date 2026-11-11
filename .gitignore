@@ -1,0 +1,22 @@
+# Build output
+build/
+.gradle/
+.kotlin/
+.tmp/
+.robolectric-home/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
+# IDE
+.idea/
+*.iml
+
+# Signing material — never publish these
+keystore.properties
+keystore/
+
+# OS
+.DS_Store
+Thumbs.db
