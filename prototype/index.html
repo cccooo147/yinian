@@ -1,0 +1,1127 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>一念 · v2</title>
+<style>
+:root{
+  --phone-w:390px; --phone-h:844px;
+  --sans:"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  --serif:"Songti SC","STSong","SimSun","Noto Serif CJK SC",serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{background:#e9e2d6;font-family:var(--sans);display:grid;place-items:center;overflow:hidden}
+button,input,textarea{font:inherit;color:inherit}
+button{border:0;background:none;padding:0;cursor:pointer}
+.desk{width:100%;height:100%;display:grid;place-items:center;padding:24px}
+.phone{
+  width:calc(var(--phone-w) + 16px);height:calc(var(--phone-h) + 16px);
+  border-radius:58px;background:#171512;padding:8px;
+  box-shadow:0 30px 70px rgba(50,40,28,.28),0 4px 16px rgba(50,40,28,.16);
+}
+.screen{
+  position:relative;width:var(--phone-w);height:var(--phone-h);overflow:hidden;
+  border-radius:50px;background:var(--paper);color:var(--ink);
+  transition:background .25s,color .25s;
+}
+.screen[data-mode="light"][data-palette="paper"]{
+  --paper:#F5F0E6;--paper-deep:#EDE5D7;--surface:#FFFBF4;--ink:#1D1A16;--muted:#81786A;
+  --hairline:#DED3C2;--accent:#CD5238;--accent-soft:#F1D8CF;--motif:#E7D8CB;
+  --card-sage:#E9F0E3;--card-blue:#E4EDF2;--card-rose:#F6E7E1;--card-sand:#F2E9DC;
+  --stamp-ink:#43221E;--shadow:rgba(57,42,26,.08);
+}
+.screen[data-mode="light"][data-palette="mineral"]{
+  --paper:#EAF0EE;--paper-deep:#DEE8E4;--surface:#F8FBF9;--ink:#1B2925;--muted:#64756E;
+  --hairline:#CBD9D3;--accent:#B85C45;--accent-soft:#EEDAD2;--motif:#D5E4DF;
+  --card-sage:#E2EDE6;--card-blue:#DFEAEF;--card-rose:#F2E3DE;--card-sand:#ECE8DA;
+  --stamp-ink:#48251D;--shadow:rgba(28,55,45,.08);
+}
+.screen[data-mode="light"][data-palette="moon"]{
+  --paper:#EEF2F6;--paper-deep:#E1E8EF;--surface:#F9FBFD;--ink:#18212B;--muted:#66717C;
+  --hairline:#D2DCE5;--accent:#5B7C9B;--accent-soft:#DCE8F1;--motif:#DCE7F0;
+  --card-sage:#E3ECEA;--card-blue:#DFEAF4;--card-rose:#F1E3E8;--card-sand:#ECE8DF;
+  --stamp-ink:#24374A;--shadow:rgba(30,48,66,.08);
+}
+.screen[data-mode="light"][data-palette="pine"]{
+  --paper:#E9EEE6;--paper-deep:#DCE4D9;--surface:#F7FAF5;--ink:#1E2A1F;--muted:#667367;
+  --hairline:#CCD8C8;--accent:#5E7B55;--accent-soft:#DDE8D8;--motif:#D7E3D2;
+  --card-sage:#E3ECDD;--card-blue:#E0E9E4;--card-rose:#F1E4E0;--card-sand:#EBE7D8;
+  --stamp-ink:#294025;--shadow:rgba(35,53,31,.08);
+}
+.screen[data-mode="light"][data-palette="lotus"]{
+  --paper:#F2EBEE;--paper-deep:#E8DDE2;--surface:#FBF7F9;--ink:#2A2027;--muted:#7A6A73;
+  --hairline:#DCCDD4;--accent:#9A5F73;--accent-soft:#EAD7DF;--motif:#E8D9E0;
+  --card-sage:#E8ECE4;--card-blue:#E3EAF0;--card-rose:#F3E0E7;--card-sand:#EEE6DA;
+  --stamp-ink:#4B2835;--shadow:rgba(66,38,50,.08);
+}
+.screen[data-mode="light"][data-palette="tea"]{
+  --paper:#EFEAE1;--paper-deep:#E5DDD0;--surface:#FAF7F0;--ink:#28221A;--muted:#7B6E5B;
+  --hairline:#D8CCBA;--accent:#8A6A45;--accent-soft:#E7DCCB;--motif:#E2D5C2;
+  --card-sage:#E9EBDD;--card-blue:#E2E8E9;--card-rose:#F1E1D9;--card-sand:#EFE4D2;
+  --stamp-ink:#4A361F;--shadow:rgba(67,49,29,.08);
+}
+.screen[data-mode="dark"][data-palette="paper"]{
+  --paper:#131210;--paper-deep:#0D0C0A;--surface:#1D1B18;--ink:#F1EAD9;--muted:#A89D8C;
+  --hairline:#332F29;--accent:#E8846B;--accent-soft:#3A241E;--motif:#2A2520;
+  --card-sage:#20261D;--card-blue:#1B2229;--card-rose:#2A1F1B;--card-sand:#26221A;
+  --stamp-ink:#F2D8CC;--shadow:rgba(0,0,0,.25);
+}
+.screen[data-mode="dark"][data-palette="mineral"]{
+  --paper:#101614;--paper-deep:#0B100E;--surface:#1A211E;--ink:#E7F0EB;--muted:#93A39B;
+  --hairline:#2B3631;--accent:#E08A6E;--accent-soft:#3A2620;--motif:#1E2A25;
+  --card-sage:#1C2721;--card-blue:#19242A;--card-rose:#2A201C;--card-sand:#24231B;
+  --stamp-ink:#F4D6C9;--shadow:rgba(0,0,0,.25);
+}
+.screen[data-mode="dark"][data-palette="moon"]{
+  --paper:#10151B;--paper-deep:#0B1015;--surface:#1A2028;--ink:#E8EFF7;--muted:#95A2B0;
+  --hairline:#2A3440;--accent:#8DB3D1;--accent-soft:#223444;--motif:#1D2833;
+  --card-sage:#1A2623;--card-blue:#1A2734;--card-rose:#292029;--card-sand:#24231E;
+  --stamp-ink:#D9E9F7;--shadow:rgba(0,0,0,.25);
+}
+.screen[data-mode="dark"][data-palette="pine"]{
+  --paper:#10150F;--paper-deep:#0B100A;--surface:#1A2117;--ink:#E8F0DF;--muted:#97A38E;
+  --hairline:#2C3827;--accent:#9BB786;--accent-soft:#283825;--motif:#1F2A1C;
+  --card-sage:#1D271A;--card-blue:#1B2522;--card-rose:#29211D;--card-sand:#242219;
+  --stamp-ink:#E2F0D5;--shadow:rgba(0,0,0,.25);
+}
+.screen[data-mode="dark"][data-palette="lotus"]{
+  --paper:#171116;--paper-deep:#100B0F;--surface:#211A20;--ink:#F2E7EE;--muted:#B09EA8;
+  --hairline:#3A2C35;--accent:#D79BB2;--accent-soft:#3A2530;--motif:#2B2028;
+  --card-sage:#20251F;--card-blue:#1D252B;--card-rose:#2C1D25;--card-sand:#282219;
+  --stamp-ink:#F5DCE8;--shadow:rgba(0,0,0,.25);
+}
+.screen[data-mode="dark"][data-palette="tea"]{
+  --paper:#16130F;--paper-deep:#100D0A;--surface:#211D17;--ink:#F2E9DA;--muted:#B2A38D;
+  --hairline:#3A3227;--accent:#D5A66D;--accent-soft:#3A2C1E;--motif:#2B241B;
+  --card-sage:#20241B;--card-blue:#1C2424;--card-rose:#2C211B;--card-sand:#2A2418;
+  --stamp-ink:#F7E2C7;--shadow:rgba(0,0,0,.25);
+}
+.screen[data-mode="light"]{
+  --todo-bg:#F2EEE6;--todo-fg:#7A7265;--wait-bg:#F8EBCF;--wait-fg:#A9711E;
+  --done-bg:#E2F0E4;--done-fg:#4F7C5B;--fail-bg:#F8E1DD;--fail-fg:#B44A3A;
+}
+.screen[data-mode="dark"]{
+  --todo-bg:#2B2822;--todo-fg:#B8AD9C;--wait-bg:#3A2E17;--wait-fg:#E2B563;
+  --done-bg:#1F3528;--done-fg:#A2D2B4;--fail-bg:#3B211C;--fail-fg:#F0A798;
+}
+#motif{
+  position:absolute;z-index:0;pointer-events:none;top:-118px;right:-180px;
+  width:300px;height:300px;background:var(--motif);border-radius:50%;
+  opacity:.72;transition:background .25s,border-radius .25s,clip-path .25s;
+}
+#motif[data-motif="arch"]{height:280px;border-radius:50% 50% 0 0;top:-96px}
+#motif[data-motif="pebble"]{height:290px;border-radius:46% 54% 38% 62% / 52% 44% 56% 48%}
+#motif[data-motif="star"]{clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 94%,50% 72%,21% 94%,32% 57%,2% 35%,39% 35%)}
+#motif[data-motif="leaf"]{border-radius:8% 92% 8% 92% / 92% 8% 92% 8%}
+#motif[data-motif="moon"]{border-radius:50%;clip-path:circle(50% at 38% 50%)}
+#motif.has-image{background-size:cover;background-position:center;opacity:.45}
+#detailMotif{
+  position:absolute;z-index:0;pointer-events:none;top:-92px;right:-155px;
+  width:270px;height:270px;background:var(--motif);border-radius:50%;opacity:.72;
+  transition:background .25s,border-radius .25s,clip-path .25s;
+}
+#detailMotif[data-motif="arch"]{height:240px;border-radius:50% 50% 0 0;top:-78px}
+#detailMotif[data-motif="pebble"]{height:250px;border-radius:46% 54% 38% 62% / 52% 44% 56% 48%}
+#detailMotif[data-motif="star"]{clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 94%,50% 72%,21% 94%,32% 57%,2% 35%,39% 35%)}
+#detailMotif[data-motif="leaf"]{border-radius:8% 92% 8% 92% / 92% 8% 92% 8%}
+#detailMotif[data-motif="moon"]{border-radius:50%;clip-path:circle(50% at 38% 50%)}
+#detailMotif.has-image{background-size:cover;background-position:center;opacity:.5}
+.app{position:relative;z-index:1;height:100%}
+.page{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;opacity:0;pointer-events:none;transition:opacity .24s}
+.page::-webkit-scrollbar{display:none}
+.page.active{opacity:1;pointer-events:auto}
+#home{padding:28px 22px 118px}
+.topline{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2}
+.date{font-size:12px;letter-spacing:.08em;color:var(--muted)}
+.greeting{margin-top:34px;font-family:var(--serif);font-size:15px;letter-spacing:.06em;color:var(--ink)}
+.headline + .date{margin-top:22px;display:block}
+.appearance-btn{
+  display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;
+  background:color-mix(in srgb,var(--surface) 78%,transparent);border:1px solid color-mix(in srgb,var(--hairline) 72%,transparent);
+  color:var(--ink);font-size:11px;letter-spacing:.04em;backdrop-filter:blur(8px);
+}
+.appearance-btn svg{width:17px;height:17px;color:var(--accent)}
+.headline{position:relative;z-index:2;margin:58px 0 0;font-family:var(--serif);font-weight:600;font-size:40px;line-height:1.16;letter-spacing:-.045em;white-space:pre-line}
+.sub{margin:20px 0 0;font-size:13px;line-height:1.7;color:var(--muted)}
+.stats{display:flex;align-items:center;gap:7px;margin-top:20px;font-size:12px;color:var(--muted)}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 12%,transparent)}
+.filters{display:flex;gap:8px;margin:18px 0 22px;overflow-x:auto;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.pill{padding:10px 16px;border-radius:999px;background:color-mix(in srgb,var(--surface) 62%,transparent);border:1px solid color-mix(in srgb,var(--hairline) 68%,transparent);font-size:13px;white-space:nowrap;color:var(--ink);transition:background .18s,color .18s}
+.pill b{font-weight:500;margin-left:4px;opacity:.75}
+.pill.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.idea-list{display:flex;flex-direction:column;gap:16px}
+.idea{
+  position:relative;padding:28px 22px 26px;border-radius:32px;background:var(--card);overflow:hidden;
+  min-height:168px;display:flex;flex-direction:column;justify-content:center;
+  box-shadow:0 2px 8px var(--shadow);cursor:pointer;transition:transform .18s;
+}
+.idea:active{transform:scale(.985)}
+.idea .stamp{margin-bottom:20px}
+.idea-title{font-family:var(--serif);line-height:1.35;font-weight:600;letter-spacing:-.02em;word-break:break-word;text-wrap:pretty}
+.idea-title.size-xl{font-size:26px}
+.idea-title.size-lg{font-size:23px}
+.idea-title.size-md{font-size:20px}
+.idea-title.size-sm{font-size:17px}
+.idea-chips{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:12px}
+.idea-chips .now{font-size:9px;line-height:1;padding:4px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.idea-line{margin-top:9px;font-size:12px;line-height:1.6;color:var(--ink);display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 8px;min-width:0}
+.idea-line .idea-text{min-width:0;word-break:break-word;text-wrap:pretty}
+.idea-line .idea-text.size-xl{font-size:15px;line-height:1.6}
+.idea-line .idea-text.size-lg{font-size:13.5px;line-height:1.6}
+.idea-line .idea-text.size-md{font-size:12px;line-height:1.6}
+.idea-line .idea-text.size-sm{font-size:10.5px;line-height:1.65}
+.idea-line .chip{flex-shrink:0}
+.idea-bar{height:2px;background:color-mix(in srgb,var(--ink) 12%,transparent);margin-top:18px;border-radius:99px;overflow:hidden}
+.idea-bar i{display:block;height:100%;background:var(--ink);border-radius:99px}
+.idea-foot{display:flex;justify-content:space-between;margin-top:9px;font-size:10px;color:var(--muted)}
+.empty{padding:56px 10px;text-align:center;color:var(--muted);font-size:13px}
+.empty .empty-title{font-family:var(--serif);font-size:19px;color:var(--ink);margin-bottom:7px}
+.empty .empty-action{margin-top:15px;display:inline-block;padding:8px 16px;border:1px solid var(--hairline);border-radius:999px;color:var(--ink);font-size:11px}
+.empty-steps{margin-top:2px;padding:28px 16px;border-radius:22px;background:var(--surface);border:1px solid var(--hairline);text-align:center;color:var(--muted);font-size:11px}
+.empty-steps b{display:block;font-family:var(--serif);font-size:17px;font-weight:500;color:var(--ink);margin-bottom:5px}
+.steps-footer{padding:18px 0 4px;text-align:center;font-size:9px;line-height:1.8;color:var(--muted);opacity:.68}
+.steps-footer span{opacity:.8}
+.compact-header{position:absolute;z-index:12;left:0;right:0;top:0;height:54px;display:flex;align-items:center;gap:10px;padding:0 22px;background:color-mix(in srgb,var(--paper) 96%,transparent);backdrop-filter:blur(12px);opacity:0;transform:translateY(-12px);pointer-events:none;transition:opacity .2s,transform .2s}
+.compact-header.show{opacity:1;transform:none;pointer-events:auto}
+.compact-header #compactDate{font-size:10px;letter-spacing:.08em;color:var(--muted)}
+.compact-header #compactCount{font-size:10px;color:var(--muted)}
+.compact-gap{flex:1}
+.appearance-btn.compact{padding:7px 10px;font-size:10px}
+.appearance-btn.compact svg{width:15px;height:15px}
+.fade{position:absolute;left:0;right:0;bottom:0;height:130px;background:linear-gradient(transparent,var(--paper) 72%);z-index:3;pointer-events:none}
+#detail.active ~ .fade{opacity:0;pointer-events:none}
+#detail.active ~ .fab{display:none}
+.fab{
+  position:absolute;z-index:5;left:50%;bottom:20px;transform:translateX(-50%);
+  display:flex;align-items:center;gap:8px;padding:15px 23px;border-radius:999px;
+  background:var(--ink);color:var(--paper);font-size:14px;box-shadow:0 10px 24px rgba(40,30,20,.18);
+  white-space:nowrap;
+}
+.fab svg{width:15px;height:15px}
+/* detail */
+#detail{background:var(--paper)}
+.detail-hero{background:var(--hero);padding:22px 22px 26px;min-height:388px;position:relative;transition:background .25s}
+.detail-top{display:flex;justify-content:space-between;position:relative;z-index:2}
+.round-btn{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--surface) 78%,transparent);color:var(--ink);backdrop-filter:blur(8px)}
+.round-btn svg{width:17px;height:17px}
+.detail-stamp-row{display:flex;align-items:center;gap:14px;margin-top:32px;position:relative;z-index:1}
+.detail-stamp{margin-top:0}
+.detail-meta{margin-top:0;font-size:9px;letter-spacing:.14em;color:var(--muted)}
+.detail-status{margin-top:5px;font-size:12px;color:var(--ink)}
+.detail-title{font-family:var(--serif);font-size:34px;line-height:1.3;font-weight:600;letter-spacing:-.035em;margin:17px 0 0}
+.detail-progress{display:flex;align-items:baseline;justify-content:space-between;margin-top:30px;gap:12px}
+.detail-progress strong{font-family:var(--serif);font-size:28px;font-weight:600;letter-spacing:-.03em}
+.detail-progress span{font-size:11px;color:var(--muted)}
+.detail-current{display:flex;align-items:baseline;gap:7px;margin-top:22px;font-size:11px;color:var(--muted);min-width:0}
+.detail-current span{color:var(--accent);font-weight:500;flex-shrink:0}
+.detail-current b{font-weight:400;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar{height:3px;background:color-mix(in srgb,var(--ink) 14%,transparent);border-radius:99px;overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;background:var(--ink);border-radius:99px;transition:width .3s}
+.counts{display:flex;gap:11px;margin-top:13px;font-size:9px;color:var(--muted);flex-wrap:wrap}
+.counts span{display:inline-flex;align-items:center;gap:4px}
+.counts b{width:5px;height:5px;border-radius:50%;display:inline-block}
+.detail-date{margin-top:16px;font-size:9px;color:var(--muted)}
+.detail-body{padding:28px 22px 118px;background:var(--paper);position:relative}
+.section-head{display:flex;align-items:center;gap:10px}
+.section-head h2{font-family:var(--serif);font-size:25px;font-weight:600;margin:0;letter-spacing:-.03em}
+.section-head em{font-style:normal;font-size:10px;padding:3px 8px;border-radius:999px;background:color-mix(in srgb,var(--surface) 72%,transparent);border:1px solid var(--hairline);color:var(--muted)}
+.hint{margin-left:auto;font-size:9px;color:var(--muted);opacity:.75}
+.section-sub{margin:8px 0 18px;font-size:12px;color:var(--muted)}
+.steps{display:flex;flex-direction:column;gap:12px}
+.step{
+  border-radius:22px;background:var(--surface);padding:14px 15px;position:relative;
+  border:1px solid transparent;box-shadow:0 1px 4px var(--shadow);cursor:pointer;
+}
+.step.current{border-color:color-mix(in srgb,var(--accent) 62%,transparent)}
+.swipe-wrap{position:relative;overflow:hidden;border-radius:22px;background:var(--fail-bg)}
+.swipe-actions{position:absolute;inset:0;display:flex;justify-content:flex-end;z-index:0}
+.swipe-actions button{width:74px;height:100%;font-size:10px;color:var(--paper)}
+.swipe-actions .sw-current{background:var(--accent)}
+.swipe-actions .sw-delete{background:var(--fail-fg)}
+.step{position:relative;z-index:1;transition:transform .18s;touch-action:pan-y}
+.step-thumb{width:72px;height:48px;object-fit:cover;border-radius:10px;margin-top:9px;display:block}
+.detail-cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.7;z-index:0;display:none}
+.detail-hero.has-cover .detail-cover{display:block}
+.detail-hero.has-cover #detailMotif{display:none}
+.detail-hero.has-cover{background:var(--paper-deep)}
+.thumb{position:absolute;right:18px;top:18px;width:62px;height:62px;border-radius:15px;object-fit:cover;border:1px solid color-mix(in srgb,var(--ink) 10%,transparent);z-index:2}
+.cover-edit{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+.cover-preview{width:96px;height:68px;border-radius:15px;border:1px dashed var(--hairline);background:var(--paper-deep);display:grid;place-items:center;color:var(--muted);overflow:hidden;background-size:cover;background-position:center}
+.cover-preview svg{width:20px;height:20px}
+.symbol-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.symbol-opt{height:58px;border-radius:14px;border:1px solid var(--hairline);background:var(--surface);display:grid;place-items:center;color:var(--stamp-ink)}
+.symbol-opt .stamp{width:46px;height:50px;border-radius:999px 999px 11px 11px}
+.symbol-opt .stamp svg{width:24px;height:24px}
+.symbol-opt.selected{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.tint-grid{display:flex;gap:12px;padding:4px 0}
+.tint-opt{width:32px;height:32px;border-radius:50%;border:2px solid transparent;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ink) 10%,transparent)}
+.tint-opt.selected{border-color:var(--accent)}
+.save-btn{width:100%;margin-top:20px;padding:13px;border-radius:15px;background:var(--accent);color:#fff;font-size:12px;font-weight:500}
+.action-list{display:flex;flex-direction:column;gap:8px}
+.action-list button{width:100%;text-align:left;padding:13px 14px;border-radius:13px;background:var(--paper-deep);font-size:12px}
+.action-list .danger{color:var(--fail-fg);background:var(--fail-bg)}
+.hidden{display:none!important}
+.step-head{display:flex;gap:8px;align-items:flex-start}
+.step-text{font-size:14px;line-height:1.55;flex:1;min-width:0;padding-right:4px;word-break:break-word;text-wrap:pretty}
+.step-text.size-xl{font-size:16px;line-height:1.55}
+.step-text.size-lg{font-size:15px;line-height:1.55}
+.step-text.size-md{font-size:14px;line-height:1.55}
+.step-text.size-sm{font-size:12.5px;line-height:1.6}
+.step-side{display:flex;align-items:center;gap:5px;flex-shrink:0;padding-top:1px}
+.current-badge{font-size:9px;line-height:1;padding:4px 6px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.chip{font-size:9px;line-height:1;padding:5px 7px;border-radius:999px;white-space:nowrap;border:1px solid color-mix(in srgb,var(--chip-fg) 18%,transparent);color:var(--chip-fg);background:var(--chip-bg)}
+.step-note{margin-top:8px;font-size:11px;line-height:1.6;color:var(--muted);padding-left:1px}
+.step.empty .step-text{color:var(--muted)}
+.composer-wrap{position:absolute;z-index:6;left:0;right:0;bottom:0;padding:12px 18px 18px;background:linear-gradient(transparent,var(--paper) 34%);display:none}
+#detail.active ~ .composer-wrap{display:block}
+.composer{display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--hairline);border-radius:999px;padding:8px 9px 8px 16px;box-shadow:0 8px 24px var(--shadow)}
+.composer input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--ink);font-size:13px}
+.composer input::placeholder{color:var(--muted)}
+.composer .send{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--paper-deep);color:var(--muted)}
+.composer .send svg{width:15px;height:15px}
+/* sheets */
+.dim{position:absolute;inset:0;z-index:20;background:rgba(27,22,17,.28);opacity:0;pointer-events:none;transition:opacity .22s;backdrop-filter:blur(2px)}
+.dim.show{opacity:1;pointer-events:auto}
+.sheet{position:absolute;z-index:21;left:0;right:0;bottom:0;background:var(--paper);border-radius:30px 30px 0 0;transform:translateY(102%);transition:transform .26s cubic-bezier(.2,.8,.2,1);max-height:92%;display:flex;flex-direction:column;box-shadow:0 -12px 40px rgba(30,20,12,.14)}
+.sheet.show{transform:translateY(0)}
+.grab{width:38px;height:4px;border-radius:99px;background:var(--hairline);margin:10px auto 0;flex-shrink:0}
+.sheet-scroll{overflow-y:auto;padding:10px 22px 26px;scrollbar-width:none;flex:1;min-height:0}
+.sheet-scroll::-webkit-scrollbar{display:none}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;margin:6px 0 16px}
+.sheet-head h3{font-family:var(--serif);font-size:22px;margin:0;font-weight:600;letter-spacing:-.02em}
+.close{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--paper-deep);color:var(--muted)}
+.close svg{width:13px;height:13px}
+.appearance-preview{height:158px;border-radius:22px;position:relative;overflow:hidden;background:var(--paper-deep);padding:20px;border:1px solid var(--hairline)}
+.appearance-preview .mini-motif{position:absolute;right:-40px;top:-58px;width:190px;height:190px;border-radius:50%;background:var(--motif)}
+.appearance-preview strong{font-family:var(--serif);font-size:24px;line-height:1.22;display:block;position:relative;white-space:pre-line}
+.appearance-preview small{font-size:10px;color:var(--muted);position:relative;display:block;margin-top:9px}
+.label-row{display:flex;align-items:center;justify-content:space-between;margin:20px 0 10px}
+.label-row label,.label-row h4{margin:0;font-size:11px;letter-spacing:.08em;color:var(--muted);font-weight:500}
+.label-row span{font-size:9px;color:var(--muted);opacity:.7}
+.palette-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.palette{position:relative;text-align:left;background:var(--surface);border:1px solid var(--hairline);border-radius:14px;padding:10px;min-height:68px}
+.palette.selected{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.palette .swatches{display:flex;gap:3px;margin-bottom:8px}
+.palette .swatches i{width:14px;height:14px;border-radius:50%;display:block}
+.palette b{font-size:10px;font-weight:500;display:block}
+.segmented{display:flex;gap:6px;background:var(--paper-deep);padding:4px;border-radius:999px}
+.segmented button{flex:1;padding:8px 4px;border-radius:999px;font-size:10px;color:var(--muted)}
+.segmented button.selected{background:var(--ink);color:var(--paper)}
+.field{width:100%;border:1px solid var(--hairline);border-radius:14px;background:var(--surface);padding:11px 13px;outline:0;font-size:12px;color:var(--ink);resize:none}
+.field:focus{border-color:var(--accent)}
+.motif-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.motif-opt{border:1px solid var(--hairline);background:var(--surface);border-radius:14px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:9px;color:var(--muted)}
+.motif-opt.selected{border-color:var(--accent);color:var(--ink)}
+.motif-opt i{width:34px;height:34px;background:var(--motif);display:block}
+.motif-opt[data-motif="half"] i{border-radius:50%}
+.motif-opt[data-motif="arch"] i{border-radius:50% 50% 0 0}
+.motif-opt[data-motif="pebble"] i{border-radius:46% 54% 38% 62% / 52% 44% 56% 48%}
+.motif-opt[data-motif="star"] i{clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 94%,50% 72%,21% 94%,32% 57%,2% 35%,39% 35%)}
+.motif-opt[data-motif="leaf"] i{border-radius:8% 92% 8% 92% / 92% 8% 92% 8%}
+.motif-opt[data-motif="moon"] i{border-radius:50%;clip-path:circle(50% at 38% 50%)}
+.image-row{display:flex;align-items:center;gap:10px;margin-top:8px}
+.image-preview{width:52px;height:52px;border-radius:14px;background:var(--paper-deep);border:1px solid var(--hairline);display:grid;place-items:center;color:var(--muted);overflow:hidden;background-size:cover;background-position:center}
+.image-preview svg{width:18px;height:18px}
+.mini-btn{padding:8px 12px;border-radius:999px;background:var(--ink);color:var(--paper);font-size:10px}
+.ghost{font-size:10px;color:var(--accent)}
+.reset{width:100%;margin-top:20px;padding:12px;border-radius:14px;background:var(--paper-deep);color:var(--muted);font-size:11px}
+/* step sheet */
+.status-pick{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.status-opt{display:flex;align-items:center;gap:8px;padding:10px 11px;border-radius:13px;background:var(--surface);border:1px solid var(--hairline);font-size:11px;text-align:left}
+.status-opt i{width:7px;height:7px;border-radius:50%;background:var(--chip-fg);flex-shrink:0}
+.status-opt.selected{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.sheet-textarea{min-height:98px;margin-top:8px}
+.sheet-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.sheet-actions button{padding:9px 12px;border-radius:999px;background:var(--paper-deep);color:var(--ink);font-size:10px}
+.sheet-actions .danger{color:var(--fail-fg);background:var(--fail-bg)}
+.sheet-actions .primary{background:var(--accent);color:#fff}
+.photo-box{height:120px;margin-top:8px;border-radius:16px;border:1px dashed var(--hairline);background:var(--paper-deep);display:grid;place-items:center;color:var(--muted);font-size:11px;gap:6px}
+.photo-box svg{width:20px;height:20px}
+/* undo */
+.undo{position:absolute;z-index:40;left:18px;right:18px;bottom:84px;background:var(--ink);color:var(--paper);border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:11px;transform:translateY(20px);opacity:0;pointer-events:none;transition:.2s}
+.undo.show{transform:none;opacity:1;pointer-events:auto}
+.undo b{font-weight:500;flex:1}
+.undo button{color:#fff;font-size:11px;padding:4px 6px}
+.undo .x{color:color-mix(in srgb,var(--paper) 60%,transparent);font-size:15px;line-height:1}
+/* more menu */
+.more-menu{position:absolute;z-index:30;right:18px;top:66px;background:var(--surface);border:1px solid var(--hairline);border-radius:16px;padding:6px;min-width:132px;box-shadow:0 14px 30px rgba(40,30,20,.16);opacity:0;transform:translateY(-6px);pointer-events:none;transition:.16s}
+.more-menu.show{opacity:1;transform:none;pointer-events:auto}
+.more-menu button{display:block;width:100%;text-align:left;padding:9px 11px;border-radius:10px;font-size:11px;color:var(--ink)}
+.more-menu button:hover{background:var(--paper-deep)}
+.more-menu .danger{color:var(--accent)}
+/* icons */
+.ico{width:22px;height:22px;display:block}
+.stamp{width:58px;height:62px;border-radius:999px 999px 13px 13px;background:var(--accent-soft);display:grid;place-items:center;color:var(--stamp-ink);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 8%,transparent)}
+.stamp svg{width:30px;height:30px;display:block}
+.stamp.large{width:56px;height:60px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+@media (max-width:520px){
+  body{display:block;background:var(--paper)}
+  .desk{padding:0;display:block}
+  .phone{width:100vw;height:100dvh;border-radius:0;padding:0;box-shadow:none;background:var(--paper)}
+  .screen{width:100%;height:100%;border-radius:0}
+  .phone{background:#000}
+  .screen{height:100dvh}
+}
+</style>
+</head>
+<body>
+<svg class="sr" aria-hidden="true">
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="19" cy="12" r="1.8" fill="currentColor"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-appearance" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8.5h3l1.4-2h7.2l1.4 2H20a1 1 0 011 1v8a1 1 0 01-1 1H4a1 1 0 01-1-1v-8a1 1 0 011-1z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="13.5" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+  <symbol id="i-gamepad" viewBox="0 0 64 64">
+    <rect x="7" y="22" width="50" height="22" rx="9" fill="currentColor"/>
+    <circle cx="15" cy="45" r="9" fill="currentColor"/><circle cx="49" cy="45" r="9" fill="currentColor"/>
+    <g fill="var(--accent-soft)" stroke="var(--accent-soft)" stroke-linecap="round">
+      <path d="M19 32v8M15 36h8" fill="none" stroke-width="3.4"/>
+      <circle cx="43" cy="32" r="2.2"/><circle cx="48" cy="37" r="2.2"/>
+    </g>
+  </symbol>
+  <symbol id="i-book" viewBox="0 0 64 64"><path d="M10 16h16c4 0 6 2 6 6v27c-2-3-5-5-10-5H10zM54 16H38c-4 0-6 2-6 6v27c2-3 5-5 10-5h12z" fill="currentColor"/></symbol>
+  <symbol id="i-star" viewBox="0 0 64 64"><path d="M32 8l7 16 17 2-13 12 4 18-15-9-15 9 4-18L8 26l17-2z" fill="currentColor"/></symbol>
+  <symbol id="i-cpu" viewBox="0 0 64 64"><rect x="16" y="16" width="32" height="32" rx="5" fill="currentColor"/><g stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M24 8v8M32 8v8M40 8v8M24 48v8M32 48v8M40 48v8M8 24h8M8 32h8M8 40h8M48 24h8M48 32h8M48 40h8"/></g><rect x="26" y="26" width="12" height="12" rx="2" fill="var(--accent-soft)"/></symbol>
+  <symbol id="i-run" viewBox="0 0 64 64"><circle cx="38" cy="12" r="6" fill="currentColor"/><path d="M31 23l-8 12 8 7-6 13M33 24l9 10 11 2M31 33l12 8" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 64 64"><path d="M42 8a24 24 0 100 48 19 19 0 010-48z" fill="currentColor"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 64 64"><path d="M52 10C28 12 12 24 12 42c0 5 3 9 8 9 18 0 30-18 32-41z" fill="currentColor"/><path d="M18 45c8-12 18-18 27-22" fill="none" stroke="var(--accent-soft)" stroke-width="3" stroke-linecap="round"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 64 64"><path d="M32 6l5 21 21 5-21 5-5 21-5-21-21-5 21-5z" fill="currentColor"/></symbol>
+</svg>
+
+<div class="desk">
+  <div class="phone">
+    <div class="screen" id="screen" data-palette="paper" data-mode="light">
+      <div id="motif" data-motif="half"></div>
+      <div class="app">
+        <section id="home" class="page active">
+          <div class="topline">
+            <div></div>
+            <button class="appearance-btn" id="openAppearance"><svg><use href="#i-appearance"/></svg>外观</button>
+          </div>
+          <div class="greeting" id="greeting">晚上好</div>
+          <h1 class="headline" id="headline">把念头，
+做成一件事。</h1>
+          <div class="date" id="date">11月2日 · 周一</div>
+          <p class="sub">想法不用完整，先记下来。</p>
+          <div class="stats"><i class="dot"></i><span id="stats">2 个念头 · 4 步待推进</span></div>
+          <div class="filters" id="filters">
+            <button class="pill active" data-filter="all">全部 <b>2</b></button>
+            <button class="pill" data-filter="active">进行中 <b>2</b></button>
+            <button class="pill" data-filter="done">已完成 <b>0</b></button>
+          </div>
+          <div class="idea-list" id="ideaList"></div>
+        </section>
+
+        <section id="detail" class="page">
+          <div class="detail-hero" id="detailHero">
+            <div id="detailMotif"></div>
+            <img id="detailCover" class="detail-cover" alt="">
+            <div class="detail-top">
+              <button class="round-btn" id="back"><svg><use href="#i-back"/></svg></button>
+              <button class="round-btn" id="more"><svg><use href="#i-more"/></svg></button>
+            </div>
+            <div class="detail-stamp-row">
+              <div class="detail-stamp" id="detailStamp"></div>
+              <div><div class="detail-meta" id="detailMeta">IDEA · 10月31日</div><div class="detail-status" id="detailStatus">正在发生</div></div>
+            </div>
+            <h1 class="detail-title" id="detailTitle"></h1>
+            <div class="detail-current" id="detailCurrent"><span>当前</span><b>还没有设定当前</b></div>
+            <div class="counts" id="detailCounts"></div>
+            <div class="detail-date" id="detailDate">开始于10月31日 · 更新于42分钟前</div>
+          </div>
+          <div class="detail-body">
+            <div class="section-head"><h2>拆成小步</h2><span class="hint">点击看描述 · 长按更多</span></div>
+            <p class="section-sub">一次，只想一步。</p>
+            <div class="steps" id="stepList"></div>
+            <div class="steps-footer" id="stepsFooter">轻点看描述 · 长按编辑 · 左滑快捷操作<br><span>每一步都很小，才算数。</span></div>
+          </div>
+          <div class="more-menu" id="moreMenu">
+            <button data-action="edit-idea">编辑念头</button>
+            <button data-action="cover">添加 / 更换封面</button>
+            <button data-action="remove-cover">移除封面</button>
+            <button data-action="share-idea">分享这个念头</button>
+            <button data-action="delete-idea" class="danger">删除念头</button>
+          </div>
+        </section>
+        <div class="composer-wrap">
+          <div class="composer"><button class="send" id="addStep" aria-label="添加"><svg><use href="#i-plus"/></svg></button><input id="stepInput" placeholder="写下下一小步…"><button class="send" id="sendStep"><svg><use href="#i-arrow"/></svg></button></div>
+        </div>
+        <div class="fade" id="homeFade"></div>
+        <button class="fab" id="newIdea"><svg><use href="#i-plus"/></svg>记下一个念头</button>
+        <div class="compact-header" id="compactHeader">
+          <span id="compactDate"></span><span class="compact-gap"></span><span id="compactCount"></span>
+          <button class="appearance-btn compact" id="compactAppearance"><svg><use href="#i-appearance"/></svg>外观</button>
+        </div>
+      </div>
+
+      <div class="dim" id="dim"></div>
+
+      <section class="sheet" id="appearanceSheet" aria-label="外观">
+        <div class="grab"></div>
+        <div class="sheet-scroll">
+          <div class="sheet-head"><h3>外观</h3><button class="close" data-close="appearance"><svg><use href="#i-close"/></svg></button></div>
+          <div class="appearance-preview"><div class="mini-motif"></div><strong id="previewHeadline">把念头，
+做成一件事。</strong><small>把每一天，过成自己的样子。</small></div>
+          <div class="label-row"><label>配色</label><span>六套纸色</span></div>
+          <div class="palette-grid" id="paletteGrid"></div>
+          <div class="label-row"><label>明暗</label></div>
+          <div class="segmented" id="modeSeg">
+            <button data-mode="system">跟随系统</button><button data-mode="light" class="selected">浅色</button><button data-mode="dark">深色</button>
+          </div>
+          <div class="label-row"><label>首页标题</label><span>最多 28 字</span></div>
+          <textarea class="field" id="headlineInput" rows="2" maxlength="28">把念头，
+做成一件事。</textarea>
+          <div class="label-row"><label>右上角形状</label><span>或导入图片</span></div>
+          <div class="motif-grid" id="motifGrid"></div>
+          <div class="image-row"><div class="image-preview" id="motifPreview"><svg><use href="#i-camera"/></svg></div><button class="mini-btn" id="pickMotif">选择图片</button><button class="ghost" id="clearMotif">移除</button></div>
+          <button class="reset" id="resetAppearance">恢复默认外观</button>
+        </div>
+      </section>
+
+      <section class="sheet" id="stepSheet" aria-label="小步描述">
+        <div class="grab"></div>
+        <div class="sheet-scroll">
+          <div class="sheet-head"><h3>描述这一步</h3><button class="close" data-close="step"><svg><use href="#i-close"/></svg></button></div>
+          <div class="label-row"><label>小步</label><span>点文字也可编辑</span></div>
+          <textarea class="field sheet-textarea" id="stepText" rows="2" placeholder="这一步要做什么？"></textarea>
+          <div class="label-row"><label>状态</label></div>
+          <div class="status-pick" id="statusPick"></div>
+          <div class="label-row"><label>这一步的想法</label><span>关闭时保存</span></div>
+          <textarea class="field sheet-textarea" id="stepNote" placeholder="写点背景、卡点、下一步…"></textarea>
+          <div class="label-row"><label>配图</label><span>可选</span></div>
+          <div class="photo-box" id="stepPhoto"><svg><use href="#i-camera"/></svg><span>添加一张图片</span></div>
+          <div class="sheet-actions">
+            <button id="toggleCurrent" class="primary">设为当前</button>
+            <button id="editStepText">编辑文字</button>
+            <button id="removeStepPhoto">移除图片</button>
+            <button id="deleteStep" class="danger">删除</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="sheet" id="ideaSheet" aria-label="念头编辑">
+        <div class="grab"></div>
+        <div class="sheet-scroll">
+          <div class="sheet-head"><h3 id="ideaSheetTitle">记下一个念头</h3><button class="close" data-close="idea"><svg><use href="#i-close"/></svg></button></div>
+          <div class="label-row"><label>标题</label><span>最多 60 字</span></div>
+          <input class="field" id="ideaTitle" maxlength="60" placeholder="想做什么？">
+          <div class="label-row"><label>标记</label></div>
+          <div class="symbol-grid" id="symbolGrid"></div>
+          <div class="label-row"><label>纸色</label></div>
+          <div class="tint-grid" id="tintGrid"></div>
+          <button class="save-btn" id="saveIdea">保存念头</button>
+        </div>
+      </section>
+
+      <section class="sheet" id="actionSheet" aria-label="小步操作">
+        <div class="grab"></div>
+        <div class="sheet-scroll">
+          <div class="sheet-head"><h3>这一步</h3><button class="close" data-close="action"><svg><use href="#i-close"/></svg></button></div>
+          <div class="action-list">
+            <button id="actionEdit">编辑小步</button>
+            <button id="actionCurrent">设为当前进度</button>
+            <button id="actionDelete" class="danger">删除小步</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="undo" id="undo"><b>已删除一步</b><button id="undoBtn">撤销</button><button class="x" id="dismissUndo">×</button></div>
+      <input type="file" id="motifFile" accept="image/*" hidden>
+      <input type="file" id="coverFile" accept="image/*" hidden>
+      <input type="file" id="stepFile" accept="image/*" hidden>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const icon = (name, cls='ico') => `<svg class="${cls}"><use href="#i-${name}"/></svg>`;
+const STORAGE = 'yinian-html-v2';
+
+const palettes = {
+  paper:{name:'宣纸',sw:['#F5F0E6','#CD5238','#E9F0E3']},
+  mineral:{name:'丹青',sw:['#EAF0EE','#B85C45','#E2EDE6']},
+  moon:{name:'月白',sw:['#EEF2F6','#5B7C9B','#DFEAF4']},
+  pine:{name:'松烟',sw:['#E9EEE6','#5E7B55','#E3ECDD']},
+  lotus:{name:'藕荷',sw:['#F2EBEE','#9A5F73','#F3E0E7']},
+  tea:{name:'茶烟',sw:['#EFEAE1','#8A6A45','#EFE4D2']}
+};
+const motifs = [['half','半圆'],['arch','拱'],['pebble','卵石'],['star','星'],['leaf','叶'],['moon','月']];
+const symbols = [['star','星星'],['gamepad','游戏'],['cpu','CPU'],['run','跑步'],['book','书'],['moon','月亮'],['leaf','叶子'],['spark','火花']];
+const statusMeta = {
+  todo:['未实现','todo'], waiting:['等待机会','wait'], done:['已实现','done'], failed:['失败','fail']
+};
+const statusKey = s => statusMeta[s][1];
+const tintVar = t => ({sage:'var(--card-sage)',blue:'var(--card-blue)',rose:'var(--card-rose)',sand:'var(--card-sand)'}[t] || 'var(--card-sage)');
+
+const seedIdeas = [
+  {id:'game',title:'做一款自己的游戏',symbol:'gamepad',tint:'sage',cover:null,created:'10月31日',updated:'42 分钟前',current:'s3',
+   steps:[
+    {id:'s1',text:'想做游戏，先确定一个真正想玩的玩法',status:'done',note:'',photo:null},
+    {id:'s2',text:'试试用 DeepSeek 生成素材，效果好像不太行',status:'waiting',note:'先看看能不能生成一套风格统一的小图标。',photo:null},
+    {id:'s3',text:'研究一下 Claude 能不能补上这一块',status:'todo',note:'',photo:null},
+    {id:'s4',text:'解决封号和充值的问题',status:'failed',note:'',photo:null}
+  ]},
+  {id:'read',title:'把阳台改成阅读角',symbol:'book',tint:'blue',cover:null,created:'10月28日',updated:'昨天',current:null,
+   steps:[
+    {id:'r1',text:'量一下阳台的宽度和插座位置',status:'done',note:'',photo:null},
+    {id:'r2',text:'找一把不占地方的折叠椅',status:'done',note:'',photo:null},
+    {id:'r3',text:'装一盏暖光的落地灯',status:'todo',note:'',photo:null}
+  ]}
+];
+
+const state = {
+  palette:'paper', mode:'light', motif:'half', motifImage:null,
+  headline:'把念头，\n做成一件事。',
+  ideas: seedIdeas, view:'home', filter:'all', selected:null,
+  step:null, actionStep:null, editingIdea:null, draft:null, deleted:null
+};
+
+function loadSaved(){
+  try{
+    const raw = localStorage.getItem(STORAGE);
+    if(!raw) return;
+    const s = JSON.parse(raw);
+    if(s.palette && palettes[s.palette]) state.palette = s.palette;
+    if(s.mode) state.mode = s.mode;
+    if(s.motif) state.motif = s.motif;
+    if(s.motifImage) state.motifImage = s.motifImage;
+    if(typeof s.headline === 'string' && s.headline.trim()) state.headline = s.headline;
+    if(Array.isArray(s.ideas)) state.ideas = s.ideas.map(i => ({...i, steps:Array.isArray(i.steps)?i.steps:[]}));
+  }catch(e){ /* prototype: ignore corrupt storage */ }
+}
+let saveTimer;
+function saveSoon(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try{
+      localStorage.setItem(STORAGE, JSON.stringify({
+        palette:state.palette, mode:state.mode, motif:state.motif,
+        motifImage:state.motifImage, headline:state.headline, ideas:state.ideas
+      }));
+    }catch(e){ /* image data may exceed quota */ }
+  }, 250);
+}
+
+const ideaById = id => state.ideas.find(i => i.id === id);
+const doneCount = i => i.steps.filter(s => s.status === 'done').length;
+const currentStep = i => i.steps.find(s => s.id === i.current) || i.steps.find(s => s.status !== 'done');
+const allDone = i => i.steps.length > 0 && doneCount(i) === i.steps.length;
+const counts = () => {
+  const all = state.ideas.length;
+  const active = state.ideas.filter(i => !allDone(i)).length;
+  return {all, active, done: all - active};
+};
+const stamp = (i, large=false) => `<div class="stamp ${large?'large':''}"><svg><use href="#i-${i.symbol}"/></svg></div>`;
+
+function paint(){
+  const screen = $('#screen');
+  screen.dataset.palette = state.palette;
+  screen.dataset.mode = state.mode === 'system'
+    ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : state.mode;
+  ['#motif','#detailMotif'].forEach(sel => {
+    const el = $(sel); if(!el) return;
+    el.dataset.motif = state.motif;
+    el.classList.toggle('has-image', !!state.motifImage);
+    el.style.backgroundImage = state.motifImage ? `url("${state.motifImage}")` : '';
+  });
+  $('#headline').textContent = state.headline;
+  $('#previewHeadline').textContent = state.headline;
+  const c = counts();
+  const pending = state.ideas.reduce((n,i) => n + i.steps.filter(s => s.status !== 'done').length, 0);
+  $('#stats').textContent = `${c.all} 个念头 · ${pending} 步待推进`;
+  $('#compactDate').textContent = $('#date').textContent;
+  $('#compactCount').textContent = `${c.all} 个念头`;
+  $$('#filters .pill').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === state.filter);
+    b.querySelector('b').textContent = c[b.dataset.filter];
+  });
+  renderIdeas();
+  if(state.selected) renderDetail();
+  updateCompact();
+  saveSoon();
+}
+
+function updateCompact(){
+  const show = state.view === 'home' && $('#home').scrollTop > 160;
+  $('#compactHeader').classList.toggle('show', show);
+}
+
+function renderIdeas(){
+  const list = $('#ideaList');
+  const data = state.ideas.filter(i => state.filter === 'all' || (state.filter === 'active' ? !allDone(i) : allDone(i)));
+  if(!data.length){
+    const title = state.filter === 'active' ? '没有进行中的念头' : state.filter === 'done' ? '还没有完成的念头' : '这里还很安静';
+    const body = state.filter === 'all' ? '先记下一个，再慢慢拆。' : '回到全部，看看已经记下的。';
+    list.innerHTML = `<div class="empty"><div class="empty-title">${title}</div><div>${body}</div>${state.filter === 'all' ? '' : '<button class="empty-action" data-show-all>查看全部</button>'}</div>`;
+    return;
+  }
+  list.innerHTML = data.map(i => {
+    const done = doneCount(i), total = i.steps.length;
+    const cur = currentStep(i), complete = allDone(i);
+    const line = complete ? '这件事，完成了' : (cur ? cur.text : '还没有拆出第一步');
+    const nowHtml = (complete || !cur) ? '' : `<span class="now">当前</span>`;
+    const chipHtml = (complete || !cur || !cur.status)
+      ? ''
+      : `<span class="chip" style="--chip-bg:var(--${statusMeta[cur.status][1]}-bg);--chip-fg:var(--${statusMeta[cur.status][1]}-fg)">${statusMeta[cur.status][0]}</span>`;
+    return `<article class="idea" data-idea="${i.id}" style="background:${tintVar(i.tint)}">
+      ${i.cover ? `<img class="thumb" src="${i.cover}" alt="">` : ''}
+      <div class="idea-title ${sizeClass(i.title, 19, 40)}">${esc(i.title)}</div>
+      ${(nowHtml || chipHtml) ? `<div class="idea-chips">${nowHtml}${chipHtml}</div>` : ''}
+      <div class="idea-line"><span class="idea-text ${sizeClass(line, 16, 34)}">${esc(line)}</span></div>
+    </article>`;
+  }).join('');
+  applySizeClasses(list);
+}
+
+function sizeClass(text, one, two){
+  const n = [...(text || '')].length;
+  if(n <= one) return 'size-xl';
+  if(n <= two) return 'size-lg';
+  if(n <= two * 2) return 'size-md';
+  return 'size-sm';
+}
+
+function applySizeClasses(root){
+  $$('.idea-title, .step-text', root).forEach(el => fitText(el, 3, 18));
+  $$('.idea-text', root).forEach(el => fitText(el, 3, 14));
+}
+
+/**
+ * Picks the largest size class whose rendered text stays within maxLines.
+ * Long text steps down a size before it wraps, then wraps as needed.
+ */
+function fitText(el, maxLines, baseSize){
+  const classes = ['size-xl','size-lg','size-md','size-sm'];
+  el.classList.remove(...classes);
+  const full = el.textContent || '';
+  if(!full) return;
+  for(const cls of classes){
+    el.classList.add(cls);
+    const size = parseFloat(getComputedStyle(el).fontSize) || baseSize;
+    const width = el.clientWidth;
+    if(!width) continue;
+    // width estimate: CJK ≈ 1em, latin ≈ 0.55em
+    let units = 0;
+    for(const ch of full) units += /[\u2E80-\u9FFF\uFF00-\uFFEF]/.test(ch) ? 1 : 0.56;
+    const perLine = Math.max(1, Math.floor(width / size));
+    const estimated = Math.max(1, Math.ceil(units / perLine));
+    if(estimated <= maxLines) return;
+  }
+  el.classList.add('size-sm');
+}
+
+function renderDetail(){
+  const i = state.selected; if(!i) return;
+  const total = i.steps.length, done = doneCount(i), pct = total ? Math.round(done/total*100) : 0;
+  const complete = allDone(i);
+  $('#detailHero').style.setProperty('--hero', tintVar(i.tint));
+  $('#detailHero').classList.toggle('has-cover', !!i.cover);
+  const cover = $('#detailCover');
+  if(i.cover){ cover.src = i.cover; cover.style.display = 'block'; } else { cover.removeAttribute('src'); cover.style.display = 'none'; }
+  $('#detailStamp').innerHTML = stamp(i, true);
+  $('#detailMeta').textContent = `IDEA · ${i.created}`;
+  $('#detailStatus').textContent = complete ? '这件事，完成了' : (i.current ? '正在发生' : '等待下一步');
+  $('#detailTitle').textContent = i.title;
+  const curFocus = i.steps.find(s => s.id === i.current);
+  $('#detailCurrent').innerHTML = `<span>当前</span><b>${esc(complete ? '这件事，完成了' : (curFocus ? curFocus.text : '还没有设定当前'))}</b>`;
+  const sc = k => i.steps.filter(s => s.status === k).length;
+  $('#detailCounts').innerHTML = [['waiting','等待'],['todo','未实现'],['failed','失败']]
+    .map(([k,l]) => `<span><b style="background:var(--${k==='waiting'?'wait':'fail'}-fg)"></b>${l} ${sc(k)}</span>`).join('');
+  $('#detailDate').textContent = `开始于${i.created} · 更新于${i.updated}`;
+  if(!i.steps.length){
+    $('#stepList').innerHTML = `<div class="empty-steps"><b>还没有小步</b>在下面写一句，先做哪一步。</div>`;
+  } else {
+    $('#stepList').innerHTML = i.steps.map(s => {
+      const [label, key] = statusMeta[s.status];
+      const cur = s.id === i.current;
+      return `<div class="swipe-wrap" data-wrap="${s.id}">
+        <div class="swipe-actions"><button class="sw-current" data-swipe="current">${cur?'取消':'当前'}</button><button class="sw-delete" data-swipe="delete">删除</button></div>
+        <article class="step ${cur?'current':''}" data-step="${s.id}">
+          <div class="step-head"><div class="step-text ${sizeClass(s.text, 22, 44)}">${esc(s.text)}</div><div class="step-side">${cur?'<span class="current-badge">当前</span>':''}<span class="chip" style="--chip-bg:var(--${key}-bg);--chip-fg:var(--${key}-fg)">${label}</span></div></div>
+          ${s.note ? `<div class="step-note">${esc(s.note)}</div>` : ''}
+          ${s.photo ? `<img class="step-thumb" src="${s.photo}" alt="">` : ''}
+        </article>
+      </div>`;
+    }).join('');
+  }
+  const removeCover = $('#moreMenu [data-action="remove-cover"]');
+  if(removeCover) removeCover.classList.toggle('hidden', !i.cover);
+  bindGestures();
+  applySizeClasses($('#stepList'));
+  saveSoon();
+}
+
+function bindGestures(){
+  $$('#stepList .swipe-wrap').forEach(wrap => {
+    const card = wrap.querySelector('.step');
+    const id = card.dataset.step;
+    let sx = 0, sy = 0, dx = 0, moved = false, long = false, timer = 0, suppress = false;
+    const reset = () => { card.style.transition = ''; card.style.transform = ''; wrap.dataset.open = ''; };
+    card.addEventListener('pointerdown', e => {
+      if(e.button && e.button !== 0) return;
+      sx = e.clientX; sy = e.clientY; dx = 0; moved = false; long = false; suppress = false;
+      $$('#stepList .swipe-wrap').forEach(w => { if(w !== wrap){ w.dataset.open=''; const c=w.querySelector('.step'); c.style.transition=''; c.style.transform=''; } });
+      timer = setTimeout(() => { long = true; openActions(id); }, 520);
+      try{ card.setPointerCapture(e.pointerId); }catch(_){}
+    });
+    card.addEventListener('pointermove', e => {
+      if(!sx) return;
+      dx = e.clientX - sx;
+      const dy = e.clientY - sy;
+      if(Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)){
+        moved = true; clearTimeout(timer); card.style.transition = 'none';
+        card.style.transform = `translateX(${Math.max(-148, Math.min(0, dx))}px)`;
+      }
+    });
+    const end = () => {
+      clearTimeout(timer);
+      if(moved){
+        suppress = true;
+        if(dx < -118){ deleteById(id); return; }
+        if(dx < -40){ card.style.transition = ''; card.style.transform = 'translateX(-148px)'; wrap.dataset.open = '1'; }
+        else reset();
+      }
+      setTimeout(() => { suppress = false; moved = false; long = false; }, 40);
+    };
+    card.addEventListener('pointerup', end);
+    card.addEventListener('pointercancel', () => { clearTimeout(timer); reset(); });
+    card.addEventListener('click', e => {
+      if(suppress || moved || long){ e.preventDefault(); e.stopPropagation(); return; }
+      if(wrap.dataset.open){ reset(); return; }
+      openStep(id);
+    });
+    card.addEventListener('contextmenu', e => { e.preventDefault(); openActions(id); });
+  });
+  $$('#stepList .swipe-actions button').forEach(b => {
+    b.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = b.closest('.swipe-wrap').dataset.wrap;
+      if(b.dataset.swipe === 'delete') deleteById(id);
+      else { toggleCurrentById(id); }
+    });
+  });
+}
+
+function openIdea(id){
+  state.selected = ideaById(id); if(!state.selected) return;
+  state.view = 'detail'; renderDetail();
+  $('#home').classList.remove('active'); $('#detail').classList.add('active');
+  $('#detail').scrollTop = 0; $('#moreMenu').classList.remove('show');
+  $('#compactHeader').classList.remove('show');
+}
+function showHome(){
+  state.selected = null; state.view = 'home';
+  $('#detail').classList.remove('active'); $('#home').classList.add('active');
+  paint(); updateCompact();
+}
+
+function openSheet(name){ $('#dim').classList.add('show'); $('#'+name+'Sheet').classList.add('show'); }
+function closeSheet(name){
+  $('#'+name+'Sheet').classList.remove('show');
+  if(!$$('.sheet.show').length) $('#dim').classList.remove('show');
+  if(name === 'step'){ renderDetail(); renderIdeas(); saveSoon(); }
+}
+function closeAll(){
+  $$('.sheet').forEach(s => s.classList.remove('show'));
+  $('#moreMenu').classList.remove('show');
+  $('#dim').classList.remove('show');
+  if(state.selected){ renderDetail(); renderIdeas(); saveSoon(); }
+}
+
+function openStep(id){
+  const i = state.selected; if(!i) return;
+  const s = i.steps.find(x => x.id === id); if(!s) return;
+  state.step = s;
+  $('#stepText').value = s.text;
+  $('#stepNote').value = s.note || '';
+  $('#toggleCurrent').textContent = s.id === i.current ? '取消当前' : '设为当前';
+  renderStatusPicker(); renderStepPhoto();
+  openSheet('step');
+}
+function renderStatusPicker(){
+  const s = state.step; if(!s) return;
+  $('#statusPick').innerHTML = Object.entries(statusMeta).map(([k,[label]]) =>
+    `<button class="status-opt ${s.status===k?'selected':''}" data-status="${k}"><i style="background:var(--${k==='waiting'?'wait':k==='failed'?'fail':k}-fg)"></i>${label}</button>`
+  ).join('');
+}
+function renderStepPhoto(){
+  const s = state.step; if(!s) return;
+  $('#stepPhoto').innerHTML = s.photo
+    ? `<img src="${s.photo}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:14px">`
+    : `<svg><use href="#i-camera"/></svg><span>添加一张图片</span>`;
+  $('#removeStepPhoto').classList.toggle('hidden', !s.photo);
+}
+
+function toggleCurrentById(id){
+  const i = state.selected; if(!i) return;
+  i.current = i.current === id ? null : id;
+  renderDetail(); renderIdeas(); saveSoon();
+}
+function deleteById(id){
+  const i = state.selected; if(!i) return;
+  state.step = i.steps.find(s => s.id === id);
+  if(state.step) deleteStep();
+}
+let undoTimer;
+function deleteStep(){
+  const i = state.selected, s = state.step; if(!i || !s) return;
+  const index = i.steps.indexOf(s); if(index < 0) return;
+  const prevCurrent = i.current;
+  i.steps.splice(index, 1);
+  if(i.current === s.id) i.current = i.steps.find(x => x.status !== 'done')?.id || null;
+  state.deleted = {idea:i, step:s, index, prevCurrent};
+  closeAll(); renderDetail(); renderIdeas(); saveSoon();
+  const bar = $('#undo'); bar.classList.add('show');
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(() => { bar.classList.remove('show'); state.deleted = null; }, 5000);
+}
+function undoSave(){
+  const d = state.deleted; if(!d) return;
+  d.idea.steps.splice(Math.min(d.index, d.idea.steps.length), 0, d.step);
+  d.idea.current = d.prevCurrent;
+  state.deleted = null; $('#undo').classList.remove('show');
+  renderDetail(); renderIdeas(); saveSoon();
+}
+
+function openActions(id){
+  const i = state.selected; if(!i) return;
+  const s = i.steps.find(x => x.id === id); if(!s) return;
+  state.actionStep = s;
+  $('#actionCurrent').textContent = s.id === i.current ? '取消当前进度' : '设为当前进度';
+  openSheet('action');
+}
+function openIdeaEditor(id){
+  const i = id ? ideaById(id) : null;
+  state.editingIdea = id || null;
+  state.draft = {
+    title:i?.title || '', symbol:i?.symbol || 'star', tint:i?.tint || 'sand', cover:i?.cover || null
+  };
+  $('#ideaSheetTitle').textContent = id ? '编辑念头' : '记下一个念头';
+  $('#ideaTitle').value = state.draft.title;
+  renderIdeaEditor();
+  openSheet('idea');
+  setTimeout(() => $('#ideaTitle').focus(), 220);
+}
+function renderIdeaEditor(){
+  const d = state.draft; if(!d) return;
+  $('#symbolGrid').innerHTML = symbols.map(([id,label]) =>
+    `<button class="symbol-opt ${d.symbol===id?'selected':''}" data-symbol="${id}" title="${label}"><div class="stamp"><svg><use href="#i-${id}"/></svg></div></button>`
+  ).join('');
+  $('#tintGrid').innerHTML = [['sage','青'],['blue','蓝'],['rose','粉'],['sand','沙']].map(([id,label]) =>
+    `<button class="tint-opt ${d.tint===id?'selected':''}" data-tint="${id}" title="${label}" style="background:${tintVar(id)}"></button>`
+  ).join('');
+}
+function saveIdea(){
+  const d = state.draft; if(!d) return;
+  const title = $('#ideaTitle').value.trim();
+  if(!title){ $('#ideaTitle').focus(); return; }
+  if(state.editingIdea){
+    const i = ideaById(state.editingIdea);
+    if(i){ Object.assign(i, {title, symbol:d.symbol, tint:d.tint, cover:d.cover, updated:'刚刚'}); }
+  } else {
+    state.filter = 'all';
+    state.ideas.unshift({
+      id:'i'+Date.now(), title, symbol:d.symbol, tint:d.tint, cover:d.cover,
+      created:'今天', updated:'刚刚', current:null, steps:[]
+    });
+  }
+  closeSheet('idea'); paint(); saveSoon();
+}
+
+function renderPalette(){
+  $('#paletteGrid').innerHTML = Object.entries(palettes).map(([id,p]) =>
+    `<button class="palette ${state.palette===id?'selected':''}" data-palette="${id}"><div class="swatches">${p.sw.map(c=>`<i style="background:${c}"></i>`).join('')}</div><b>${p.name}</b></button>`
+  ).join('');
+  $$('#modeSeg button').forEach(b => b.classList.toggle('selected', b.dataset.mode === state.mode));
+  $('#headlineInput').value = state.headline;
+  $('#motifGrid').innerHTML = motifs.map(([id,label]) =>
+    `<button class="motif-opt ${state.motif===id?'selected':''}" data-motif="${id}"><i></i>${label}</button>`
+  ).join('');
+  const p = $('#motifPreview');
+  p.style.backgroundImage = state.motifImage ? `url("${state.motifImage}")` : '';
+  p.innerHTML = state.motifImage ? '' : `<svg><use href="#i-camera"/></svg>`;
+}
+
+function pickFile(input, onload){
+  const f = input.files && input.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => onload(r.result);
+  r.readAsDataURL(f);
+  input.value = '';
+}
+
+// navigation
+$('#openAppearance').onclick = () => { renderPalette(); openSheet('appearance'); };
+$('#newIdea').onclick = () => openIdeaEditor(null);
+$('#filters').onclick = e => { const b=e.target.closest('[data-filter]'); if(!b) return; state.filter=b.dataset.filter; paint(); };
+$('#ideaList').onclick = e => {
+  if(e.target.closest('[data-show-all]')){ state.filter = 'all'; paint(); return; }
+  const card=e.target.closest('[data-idea]'); if(card) openIdea(card.dataset.idea);
+};
+$('#compactAppearance').onclick = () => { renderPalette(); openSheet('appearance'); };
+$('#home').addEventListener('scroll', updateCompact);
+$('#back').onclick = showHome;
+$('#more').onclick = e => { e.stopPropagation(); $('#moreMenu').classList.toggle('show'); };
+$('#moreMenu').onclick = e => {
+  const b = e.target.closest('[data-action]'); if(!b) return;
+  const i = state.selected;
+  if(b.dataset.action === 'edit-idea'){ if(i) openIdeaEditor(i.id); }
+  else if(b.dataset.action === 'cover'){ if(i) $('#coverFile').click(); }
+  else if(b.dataset.action === 'remove-cover'){ if(i){ i.cover=null; renderDetail(); renderIdeas(); saveSoon(); } }
+  else if(b.dataset.action === 'share-idea' && i){
+    const text = `${i.title}\n${i.steps.map(s => `[${statusMeta[s.status][0]}] ${s.text}`).join('\n')}`;
+    if(navigator.share) navigator.share({title:i.title, text}).catch(() => {});
+    else navigator.clipboard?.writeText(text).then(() => alert('已复制分享文案')).catch(() => alert(text));
+  }
+  else if(b.dataset.action === 'delete-idea' && i){
+    if(confirm(`删除「${i.title}」？`)){ state.ideas = state.ideas.filter(x => x.id !== i.id); showHome(); saveSoon(); }
+  }
+  $('#moreMenu').classList.remove('show');
+};
+$('#stepList').onclick = e => {
+  const btn = e.target.closest('[data-swipe]');
+  if(btn){ e.stopPropagation(); }
+};
+$('#addStep').onclick = () => $('#stepInput').focus();
+$('#sendStep').onclick = () => {
+  const i = state.selected, text = $('#stepInput').value.trim(); if(!i || !text) return;
+  i.steps.push({id:'t'+Date.now(), text, status:'todo', note:'', photo:null});
+  $('#stepInput').value=''; renderDetail(); renderIdeas(); saveSoon();
+};
+$('#stepInput').addEventListener('keydown', e => { if(e.key === 'Enter') $('#sendStep').click(); });
+$('#stepText').oninput = e => { if(state.step){ state.step.text = e.target.value; saveSoon(); } };
+$('#stepNote').oninput = e => { if(state.step){ state.step.note = e.target.value; saveSoon(); } };
+$('#statusPick').onclick = e => {
+  const b=e.target.closest('[data-status]'); if(!b || !state.step) return;
+  state.step.status = b.dataset.status;
+  if(b.dataset.status === 'done' && state.selected.current === state.step.id){
+    state.selected.current = state.selected.steps.find(x => x.status !== 'done')?.id || null;
+  }
+  renderStatusPicker();
+  $('#toggleCurrent').textContent = state.step.id === state.selected.current ? '取消当前' : '设为当前';
+  renderDetail(); renderIdeas(); saveSoon();
+};
+$('#toggleCurrent').onclick = () => {
+  const i=state.selected, s=state.step; if(!i || !s) return;
+  i.current = i.current === s.id ? null : s.id;
+  $('#toggleCurrent').textContent = i.current === s.id ? '取消当前' : '设为当前';
+  renderDetail(); renderIdeas(); saveSoon();
+};
+$('#editStepText').onclick = () => { $('#stepText').focus(); $('#stepText').select(); };
+$('#deleteStep').onclick = deleteStep;
+$('#stepPhoto').onclick = () => { if(state.step) $('#stepFile').click(); };
+$('#removeStepPhoto').onclick = () => {
+  if(!state.step) return;
+  state.step.photo = null; renderStepPhoto(); renderDetail(); renderIdeas(); saveSoon();
+};
+$('#stepFile').onchange = e => pickFile(e.target, data => {
+  if(!state.step) return;
+  state.step.photo = data; renderStepPhoto(); renderDetail(); renderIdeas(); saveSoon();
+});
+$('#undoBtn').onclick = undoSave;
+$('#dismissUndo').onclick = () => { state.deleted=null; $('#undo').classList.remove('show'); };
+$('#paletteGrid').onclick = e => { const b=e.target.closest('[data-palette]'); if(!b) return; state.palette=b.dataset.palette; renderPalette(); paint(); };
+$('#modeSeg').onclick = e => { const b=e.target.closest('[data-mode]'); if(!b) return; state.mode=b.dataset.mode; renderPalette(); paint(); };
+$('#motifGrid').onclick = e => {
+  const b=e.target.closest('[data-motif]'); if(!b) return;
+  state.motif=b.dataset.motif; state.motifImage=null; renderPalette(); paint();
+};
+$('#headlineInput').oninput = e => {
+  state.headline = e.target.value;
+  $('#headline').textContent = state.headline;
+  $('#previewHeadline').textContent = state.headline;
+  saveSoon();
+};
+$('#pickMotif').onclick = () => $('#motifFile').click();
+$('#motifFile').onchange = e => pickFile(e.target, data => {
+  state.motifImage = data; renderPalette(); paint();
+});
+$('#clearMotif').onclick = () => { state.motifImage=null; renderPalette(); paint(); };
+$('#resetAppearance').onclick = () => {
+  Object.assign(state, {palette:'paper',mode:'light',motif:'half',motifImage:null,headline:'把念头，\n做成一件事。'});
+  renderPalette(); paint();
+};
+
+// idea editor
+$('#coverFile').onchange = e => pickFile(e.target, data => {
+  if(state.selected){
+    state.selected.cover = data; renderDetail(); renderIdeas(); saveSoon();
+  }
+});
+$('#symbolGrid').onclick = e => {
+  const b=e.target.closest('[data-symbol]'); if(!b || !state.draft) return;
+  state.draft.symbol = b.dataset.symbol; renderIdeaEditor();
+};
+$('#tintGrid').onclick = e => {
+  const b=e.target.closest('[data-tint]'); if(!b || !state.draft) return;
+  state.draft.tint = b.dataset.tint; renderIdeaEditor();
+};
+$('#saveIdea').onclick = saveIdea;
+
+// actions
+$('#actionEdit').onclick = () => { const s=state.actionStep; closeSheet('action'); if(s) openStep(s.id); };
+$('#actionCurrent').onclick = () => {
+  const s=state.actionStep; if(!s) return;
+  toggleCurrentById(s.id); closeSheet('action');
+};
+$('#actionDelete').onclick = () => {
+  const s=state.actionStep; if(!s) return;
+  state.step = s; closeSheet('action'); deleteStep();
+};
+
+// sheet dismiss
+$('#dim').onclick = closeAll;
+$$('[data-close]').forEach(b => b.onclick = () => closeSheet(b.dataset.close));
+document.addEventListener('click', e => {
+  if(!e.target.closest('#moreMenu') && !e.target.closest('#more')) $('#moreMenu').classList.remove('show');
+});
+
+// seed date + greeting
+function greetingFor(hour){
+  if(hour < 5) return '现在是凌晨';
+  if(hour < 11) return '早上好';
+  if(hour < 13) return '中午好';
+  if(hour < 18) return '下午好';
+  return '晚上好';
+}
+function refreshClock(){
+  const d = new Date(); const wd = '日一二三四五六'[d.getDay()];
+  const dateText = `${d.getMonth()+1}月${d.getDate()}日 · 周${wd}`;
+  const greet = greetingFor(d.getHours());
+  if($('#date').textContent !== dateText) $('#date').textContent = dateText;
+  if($('#greeting').textContent !== greet) $('#greeting').textContent = greet;
+  $('#compactDate').textContent = dateText;
+}
+refreshClock();
+
+loadSaved();
+renderPalette();
+paint();
+
+const systemDark = matchMedia('(prefers-color-scheme: dark)');
+if(systemDark.addEventListener) systemDark.addEventListener('change', () => { if(state.mode === 'system') paint(); });
+
+const q = new URLSearchParams(location.search);
+if(q.get('instant')) $$('.page').forEach(p => p.style.transition = 'none');
+if(q.get('palette') && palettes[q.get('palette')]) state.palette = q.get('palette');
+if(q.get('mode')) state.mode = q.get('mode');
+paint();
+if(q.get('view') === 'detail') openIdea(q.get('idea') || 'game');
+if(q.get('sheet') === 'appearance'){ renderPalette(); openSheet('appearance'); }
+if(q.get('sheet') === 'step' && state.selected) openStep(q.get('step') || 's3');
+if(q.get('sheet') === 'idea') openIdeaEditor(q.get('idea') || null);
+if(q.get('sheet') === 'action' && state.selected) openActions(q.get('step') || 's3');
+
+</script>
+</body>
+</html>
+
