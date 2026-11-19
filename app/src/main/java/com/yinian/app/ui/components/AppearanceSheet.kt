@@ -53,6 +53,11 @@ import com.yinian.app.data.PaletteId
 import com.yinian.app.data.ThemeMode
 import com.yinian.app.ui.theme.LocalAppColors
 import com.yinian.app.ui.theme.Palettes
+import com.yinian.app.data.BlurDistance
+import com.yinian.app.data.BlurLevel
+import com.yinian.app.data.CardVeil
+import com.yinian.app.data.TopGap
+import com.yinian.app.data.TextShadowLevel
 
 private val modes = listOf(
     ThemeMode.SYSTEM to "跟随系统",
@@ -82,7 +87,9 @@ fun AppearanceSheet(
     val context = LocalContext.current
     var headline by remember(groupTitle) { mutableStateOf(groupTitle) }
     var pendingHome by remember { mutableStateOf<Uri?>(null) }
-    val homeAspect = LocalConfiguration.current.screenWidthDp / 390f
+    val homeAspect = LocalConfiguration.current.let { cfg ->
+        cfg.screenWidthDp.toFloat() / cfg.screenHeightDp.toFloat()
+    }
     val picker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia(),
     ) { uri -> if (uri != null) pendingHome = uri }
@@ -136,7 +143,7 @@ fun AppearanceSheet(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     Modifier
-                        .size(width = 96.dp, height = 60.dp)
+                        .size(width = 54.dp, height = 96.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(colors.paperDeep)
                         .border(1.dp, colors.hairline, RoundedCornerShape(12.dp)),
@@ -279,6 +286,77 @@ fun AppearanceSheet(
                 }
             }
 
+            SheetLabel(label = "卡片与头图", hint = "只影响首页")
+            CardOptionRow(
+                label = "首屏留白",
+                options = listOf(
+                    TopGap.SMALL to "小",
+                    TopGap.MEDIUM to "中",
+                    TopGap.LARGE to "大",
+                    TopGap.LARGER to "更大",
+                ),
+                selected = appearance.topGap,
+                onSelect = { onUpdate(appearance.copy(topGap = it)) },
+            )
+            CardOptionRow(
+                label = "卡片底",
+                options = listOf(
+                    CardVeil.LIGHT to "通透",
+                    CardVeil.SOFT to "柔和",
+                    CardVeil.MEDIUM to "更白",
+                    CardVeil.DEEP to "最实",
+                ),
+                selected = appearance.cardVeil,
+                enabled = appearance.cardGlass,
+                onSelect = { onUpdate(appearance.copy(cardVeil = it)) },
+            )
+            CardOptionRow(
+                label = "底材质",
+                options = listOf(true to "玻璃", false to "纸色"),
+                selected = appearance.cardGlass,
+                onSelect = { onUpdate(appearance.copy(cardGlass = it)) },
+            )
+            CardOptionRow(
+                label = "文字阴影",
+                options = listOf(
+                    TextShadowLevel.NONE to "无",
+                    TextShadowLevel.SOFT to "有点",
+                    TextShadowLevel.STRONG to "增强",
+                ),
+                selected = appearance.textShadow,
+                enabled = appearance.cardGlass,
+                onSelect = { onUpdate(appearance.copy(textShadow = it)) },
+            )
+            CardOptionRow(
+                label = "上滑虚化",
+                options = listOf(true to "开", false to "关"),
+                selected = appearance.heroBlur,
+                onSelect = { onUpdate(appearance.copy(heroBlur = it)) },
+            )
+            CardOptionRow(
+                label = "虚化程度",
+                options = listOf(
+                    BlurLevel.LIGHT to "轻",
+                    BlurLevel.MEDIUM to "中",
+                    BlurLevel.HEAVY to "重",
+                    BlurLevel.MAX to "最重",
+                ),
+                selected = appearance.blurLevel,
+                enabled = appearance.heroBlur,
+                onSelect = { onUpdate(appearance.copy(blurLevel = it)) },
+            )
+            CardOptionRow(
+                label = "虚化距离",
+                options = listOf(
+                    BlurDistance.SHORT to "短",
+                    BlurDistance.MEDIUM to "中",
+                    BlurDistance.LONG to "长",
+                ),
+                selected = appearance.blurDistance,
+                enabled = appearance.heroBlur,
+                onSelect = { onUpdate(appearance.copy(blurDistance = it)) },
+            )
+
             Text(
                 text = "恢复默认外观",
                 modifier = Modifier
@@ -329,6 +407,55 @@ fun AppearanceSheet(
                 onPickHomeImage(uri, spec)
             },
         )
+    }
+}
+
+/** One labelled row of pills; used by the card & header settings. */
+@Composable
+private fun <T> CardOptionRow(
+    label: String,
+    options: List<Pair<T, String>>,
+    selected: T,
+    enabled: Boolean = true,
+    onSelect: (T) -> Unit,
+) {
+    val colors = LocalAppColors.current
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.width(66.dp),
+            color = if (enabled) colors.muted else colors.muted.copy(alpha = 0.40f),
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+        )
+        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            options.forEach { (value, text) ->
+                val on = value == selected
+                Text(
+                    text = text,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(9.dp))
+                        .background(
+                            when {
+                                !enabled -> colors.paperDeep.copy(alpha = 0.45f)
+                                on -> colors.ink
+                                else -> colors.paperDeep
+                            },
+                        )
+                        .clickable(enabled = enabled) { onSelect(value) }
+                        .padding(vertical = 7.dp),
+                    color = if (on && enabled) colors.paper else colors.muted,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    maxLines = 1,
+                )
+            }
+        }
     }
 }
 

@@ -73,3 +73,4 @@ The script owns JDK/SDK/Gradle/TEMP environment variables.
 - Tests: `app/src/test/java/com/yinian/app/AppSmokeTest.kt` and `ScreenshotTest.kt`.
 - Snapshots: `app/src/test/snapshots/images/`.
 - No git binary on this machine. For risky work, keep a copy of touched files or ask the user; never claim a commit exists.
+- **adb is install-only.** Allowed: `adb pair`, `adb connect`, `adb devices`, `adb install -r`. Forbidden: screencap, `am start`, `shell`, `pull`/`push`, `pm`, `logcat`, `uiautomator`, settings changes, uninstall. Never drive the phone through adb beyond installing the APK.

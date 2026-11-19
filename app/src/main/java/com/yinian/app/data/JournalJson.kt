@@ -15,7 +15,7 @@ import java.util.UUID
  */
 object JournalJson {
 
-    private const val VERSION = 8
+    private const val VERSION = 9
 
     private val LEGACY_SEED_TITLES = setOf("做一款自己的游戏", "把阳台改成阅读角")
 
@@ -161,6 +161,22 @@ object JournalJson {
                 homeImagePath = root.optNullableString("homeImagePath")
                     ?: root.optNullableString("motifImagePath"),
                 customStatuses = parseCustomStatuses(root.optJSONArray("customStatuses")),
+                topGap = enumOr(root.optString("topGap"), TopGap.MEDIUM),
+                cardVeil = enumOr(root.optString("cardVeil"), CardVeil.SOFT),
+                cardGlass = root.optBoolean("cardGlass", true),
+                textShadow = if (root.has("textShadow")) {
+                    enumOr(root.optString("textShadow"), TextShadowLevel.SOFT)
+                } else {
+                    // v9 stored a plain boolean here.
+                    if (root.optBoolean("cardTextShadow", true)) {
+                        TextShadowLevel.SOFT
+                    } else {
+                        TextShadowLevel.NONE
+                    }
+                },
+                heroBlur = root.optBoolean("heroBlur", true),
+                blurLevel = enumOr(root.optString("blurLevel"), BlurLevel.MEDIUM),
+                blurDistance = enumOr(root.optString("blurDistance"), BlurDistance.MEDIUM),
             )
         }.getOrDefault(Appearance())
     }
@@ -177,6 +193,13 @@ object JournalJson {
                 appearance.customStatuses.forEach { put(it) }
             },
         )
+        put("topGap", appearance.topGap.name)
+        put("cardVeil", appearance.cardVeil.name)
+        put("cardGlass", appearance.cardGlass)
+        put("textShadow", appearance.textShadow.name)
+        put("heroBlur", appearance.heroBlur)
+        put("blurLevel", appearance.blurLevel.name)
+        put("blurDistance", appearance.blurDistance.name)
     }.toString()
 
     fun seedIdeas(): List<Idea> = listOf(tutorialIdea())

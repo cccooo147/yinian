@@ -87,7 +87,7 @@ fun DetailScreen(
             Toast.makeText(context, "没有应用能打开这个链接", Toast.LENGTH_SHORT).show()
         }
     }
-    val coverAspect = LocalConfiguration.current.screenWidthDp / 220f
+    val coverAspect = 1.6f
     val listState = rememberLazyListState()
     var menuOpen by remember { mutableStateOf(false) }
     var pendingCover by remember { mutableStateOf<Uri?>(null) }

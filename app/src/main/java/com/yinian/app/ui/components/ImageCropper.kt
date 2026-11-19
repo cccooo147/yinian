@@ -8,13 +8,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -103,6 +106,7 @@ fun ImageCropperDialog(
                 .fillMaxSize()
                 .background(Color(0xF215120E))
                 .systemBarsPadding()
+                .navigationBarsPadding()
                 .padding(horizontal = 22.dp, vertical = 18.dp),
         ) {
             Column(Modifier.fillMaxSize()) {
@@ -114,12 +118,20 @@ fun ImageCropperDialog(
                         fontSize = 20.sp,
                     ),
                 )
-                Spacer(Modifier.weight(1f))
+                Spacer(Modifier.height(14.dp))
+
+                BoxWithConstraints(
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    val fitW = minOf(maxWidth, maxHeight * aspect)
+                    val fitH = fitW / aspect
 
                 Box(
                     Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(aspect)
+                        .size(fitW, fitH)
                         .clip(RoundedCornerShape(18.dp))
                         .background(Color.Black)
                         .onSizeChanged { frame = it }
@@ -166,6 +178,7 @@ fun ImageCropperDialog(
                             .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(18.dp)),
                     )
                 }
+                }
 
                 Text(
                     text = if (image == null) {
@@ -178,10 +191,10 @@ fun ImageCropperDialog(
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
                     textAlign = TextAlign.Center,
                 )
-                Spacer(Modifier.weight(1f))
-
                 Row(
-                    Modifier.fillMaxWidth(),
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp, bottom = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     Text(

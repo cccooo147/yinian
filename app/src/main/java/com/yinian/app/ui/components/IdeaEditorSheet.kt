@@ -227,7 +227,7 @@ fun IdeaEditorSheet(
     pendingCover?.let { uri ->
         ImageCropperDialog(
             uri = uri,
-            aspect = 1.76f,
+            aspect = 1.6f,
             title = "裁切卡片图片",
             onCancel = { pendingCover = null },
             onConfirm = { spec ->

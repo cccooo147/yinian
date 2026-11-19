@@ -56,6 +56,7 @@ import com.yinian.app.ui.components.LocalImageFile
 import com.yinian.app.ui.components.TrashGlyph
 import com.yinian.app.ui.detail.DetailScreen
 import com.yinian.app.ui.home.HomeScreen
+import com.yinian.app.ui.home.HomeScrollMemory
 import com.yinian.app.ui.theme.LocalAppColors
 
 @Composable
@@ -72,6 +73,9 @@ fun YinianApp(viewModel: AppViewModel, state: AppUiState) {
     var editingId by rememberSaveable { mutableStateOf<String?>(null) }
     var draftGroupId by rememberSaveable { mutableStateOf<String?>(null) }
     var currentGroupId by rememberSaveable { mutableStateOf(DEFAULT_GROUP_ID) }
+    // Lives above the AnimatedContent, otherwise Home leaves composition when a
+    // detail page opens and the list scroll position is thrown away.
+    val homeScroll = remember { HomeScrollMemory() }
 
     val selected = state.ideas.firstOrNull { it.id == selectedId }
 
@@ -139,6 +143,7 @@ fun YinianApp(viewModel: AppViewModel, state: AppUiState) {
                         onDeleteGroup = viewModel::deleteGroup,
                         onOpenAppearance = { showAppearance = true },
                         onGroupChanged = { currentGroupId = it },
+                        scrollMemory = homeScroll,
                     )
                 } else {
                     DetailScreen(

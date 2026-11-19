@@ -1,40 +1,45 @@
 package com.yinian.app.ui.home
 
+import android.graphics.BlurMaskFilter
+import android.graphics.Paint
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontSynthesis
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -42,16 +47,23 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.yinian.app.data.Idea
 import com.yinian.app.data.StepStatus
+import com.yinian.app.data.TextShadowLevel
 import com.yinian.app.ui.components.LocalImageFile
-import com.yinian.app.ui.components.StatusChip
-import com.yinian.app.ui.theme.CurrentPill
-import com.yinian.app.ui.theme.CurrentPillContent
 import com.yinian.app.ui.theme.LocalAppColors
+import com.yinian.app.ui.theme.LocalStatusPalette
+import com.yinian.app.ui.theme.StatusTone
+
+/** 状态胶囊：深棕底 + 奶油字 + 暖橙点，卡片图下文字区专用。 */
+private val ChipBackground = Color(0xCC4A382A)
+private val ChipContent = Color(0xFFF9DEC4)
+private val ChipDot = Color(0xFFE08A4E)
+private val ChipBorder = Color(0x9ED6A069)
 
 /**
- * One "念头" cover card, fixed at the prototype's 346:196 shape. Tap opens the
- * idea; long press opens the action sheet (pin / move / edit / delete). There is
- * no horizontal drag any more — the home pager owns horizontal gestures.
+ * One "念头" card: cover on top, text on a see-through strip below, so the
+ * page background (the group's header image) reads through the card.
+ * [onDark] says whether what sits behind is a photo — with no header image the
+ * card falls back to ink text instead of invisible white.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -60,137 +72,155 @@ fun IdeaCard(
     onOpen: () -> Unit,
     onLongPress: () -> Unit,
     modifier: Modifier = Modifier,
+    onDark: Boolean = true,
+    glass: Boolean = true,
+    veilAlpha: Float = 0.12f,
+    textShadow: TextShadowLevel = TextShadowLevel.SOFT,
 ) {
     val colors = LocalAppColors.current
     val haptic = LocalHapticFeedback.current
-    val shape = RoundedCornerShape(24.dp)
+    val shape = RoundedCornerShape(20.dp)
 
-    // Songti ships only in regular weight on most phones; asking for 800 makes
-    // Android fall back to a sans CJK face. Keep the face, buy weight with size.
-    val titleSize = when (idea.title.length) {
-        in 0..19 -> 24
-        in 20..40 -> 22
-        in 41..80 -> 20
-        else -> 18
-    }
-    // Always show a real step line: a finished idea keeps its full card instead
-    // of collapsing into a "done" caption.
     val focus = idea.currentStep
         ?: idea.steps.firstOrNull { it.status != StepStatus.DONE }
         ?: idea.steps.lastOrNull()
     val line = focus?.text ?: "还没有拆出第一步"
     val tint = colors.tint(idea.tint)
+    val titleSize = when (idea.title.length) {
+        in 0..19 -> 26
+        in 20..40 -> 23
+        in 41..80 -> 20
+        else -> 18
+    }
 
-    Box(modifier) {
-        Box(Modifier.fillMaxWidth().aspectRatio(1.76f)) {
-            // A window-like drop shadow, drawn as three plates in one draw pass so
-            // scrolling does not pay for three extra layers per card.
-            CardShadow()
-
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .clip(shape)
-                    .background(
-                        if (idea.coverPath == null) {
-                            Brush.verticalGradient(
-                                listOf(tint, lerp(tint, colors.ink, 0.42f)),
-                            )
-                        } else {
-                            Brush.verticalGradient(listOf(tint, tint))
-                        },
-                    )
-                    .border(1.dp, colors.ink.copy(alpha = 0.06f), shape)
-                    .combinedClickable(
-                        onClick = onOpen,
-                        onLongClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onLongPress()
-                        },
-                    ),
-            ) {
-                val cover = LocalImageFile.current(idea.coverPath)
-                if (cover != null) {
-                    AsyncImage(
-                        model = cover,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                }
-
-                // The shade stops at the marks row so the photo keeps its own tone.
+    val light = onDark && glass
+    val body = if (light) Color.White else colors.ink
+    val bodySoft = if (light) Color.White.copy(alpha = 0.72f) else colors.muted
+    val textShadowStyle = Shadow(
+        color = Color.Black.copy(alpha = textShadow.alpha),
+        offset = androidx.compose.ui.geometry.Offset(0f, 2f),
+        blurRadius = textShadow.blur,
+    )
+    val titleShadow = if (light && textShadow != TextShadowLevel.NONE) textShadowStyle else null
+    Column(
+        modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(
+                when {
+                    !glass -> colors.paper
+                    onDark -> Color.White.copy(alpha = veilAlpha)
+                    else -> colors.ink.copy(alpha = 0.04f)
+                },
+            )
+            .combinedClickable(
+                onClick = onOpen,
+                onLongClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onLongPress()
+                },
+            ),
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .aspectRatio(1.6f),
+        ) {
+            val cover = LocalImageFile.current(idea.coverPath)
+            if (cover != null) {
+                AsyncImage(
+                    model = cover,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else {
                 Box(
                     Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .height(56.dp)
+                        .fillMaxSize()
                         .background(
                             Brush.verticalGradient(
-                                0f to Color.Transparent,
-                                1f to Color.Black.copy(alpha = 0.42f),
+                                listOf(tint, lerp(tint, colors.ink, 0.42f)),
                             ),
                         ),
                 )
+            }
+        }
 
-                Column(
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(start = 18.dp, end = 18.dp, top = 16.dp, bottom = 18.dp),
+        ) {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = idea.title,
+                    modifier = Modifier.weight(1f),
+                    color = body,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = TextStyle(
+                        fontFamily = FontFamily.SansSerif,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = titleSize.sp,
+                        lineHeight = (titleSize * 1.24f).sp,
+                        letterSpacing = (-0.3).sp,
+                        shadow = titleShadow,
+                    ),
+                )
+                if (idea.pinned) {
+                    Spacer(Modifier.width(8.dp))
+                    PinnedPill(light)
+                    Spacer(Modifier.width(4.dp))
+                }
+                if (focus != null) {
+                    if (!idea.pinned) Spacer(Modifier.width(8.dp))
+                    StatusPill(
+                        status = focus.status,
+                        label = focus.customStatus,
+                        custom = focus.customStatus != null,
+                    )
+                }
+            }
+
+            Row(
+                Modifier
+                    .padding(top = 14.dp)
+                    .height(IntrinsicSize.Min),
+            ) {
+                Box(
                     Modifier
-                        .align(Alignment.BottomStart)
-                        .fillMaxWidth()
-                        .padding(start = 18.dp, end = 18.dp, top = 22.dp, bottom = 11.dp),
-                    verticalArrangement = Arrangement.spacedBy(3.dp),
-                ) {
+                        .width(4.dp)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(colors.accent),
+                )
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
                     Text(
-                        text = idea.title,
-                        color = Color.White,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
+                        text = "当前进度",
+                        color = bodySoft,
                         style = TextStyle(
-                            fontFamily = FontFamily.Serif,
-                            fontWeight = FontWeight.Normal,
-                            fontSynthesis = FontSynthesis.All,
-                            fontSize = titleSize.sp,
-                            lineHeight = (titleSize * 1.28f).sp,
-                            letterSpacing = (-0.4f).sp,
-                            // A soft, spreading drop: readable on photos without
-                            // turning into a hard edge.
-                            shadow = Shadow(
-                                color = Color.Black.copy(alpha = 0.88f),
-                                offset = Offset(0f, 2f),
-                                blurRadius = 12f,
-                            ),
+                            fontFamily = FontFamily.SansSerif,
+                            fontSize = 11.sp,
+                            letterSpacing = 0.6.sp,
                         ),
                     )
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        if (idea.pinned) {
-                            Pill(text = "置顶", background = colors.ink, content = colors.paper)
-                        }
-                        if (focus != null) {
-                            Pill(text = "当前进度", background = CurrentPill, content = CurrentPillContent)
-                        }
-                        if (focus != null) {
-                            StatusChip(status = focus.status, customLabel = focus.customStatus)
-                        }
-                    }
-
                     Text(
                         text = line,
-                        color = Color.White.copy(alpha = 0.94f),
-                        maxLines = 2,
+                        modifier = Modifier.padding(top = 4.dp),
+                        color = body,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         style = TextStyle(
                             fontFamily = FontFamily.SansSerif,
-                            fontSize = 12.sp,
-                            lineHeight = 19.sp,
-                            shadow = Shadow(
-                                color = Color.Black.copy(alpha = 0.95f),
-                                offset = Offset(0f, 1.5f),
-                                blurRadius = 8f,
-                            ),
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 15.sp,
+                            lineHeight = 21.sp,
+                            shadow = titleShadow,
                         ),
                     )
                 }
@@ -200,49 +230,51 @@ fun IdeaCard(
 }
 
 @Composable
-private fun CardShadow() {
-    Box(
-        Modifier
-            .fillMaxSize()
-            .drawWithCache {
-                val radius = 24.dp.toPx()
-                val plates = listOf(
-                    Triple(0.030f, 1.055f, 14.dp.toPx()),
-                    Triple(0.050f, 1.030f, 8.dp.toPx()),
-                    Triple(0.075f, 1.012f, 3.dp.toPx()),
-                )
-                onDrawBehind {
-                    plates.forEach { (alpha, scale, dy) ->
-                        val w = size.width * scale
-                        val h = size.height * scale
-                        drawRoundRect(
-                            color = Color.Black.copy(alpha = alpha),
-                            topLeft = Offset(
-                                x = (size.width - w) / 2f,
-                                y = (size.height - h) / 2f + dy,
-                            ),
-                            size = Size(w, h),
-                            cornerRadius = CornerRadius(radius * scale),
-                        )
-                    }
-                }
-            },
+private fun PinnedPill(light: Boolean) {
+    Text(
+        text = "置顶",
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(Color.Black.copy(alpha = 0.72f))
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        color = Color(0xFFE7C173),
+        maxLines = 1,
+        style = TextStyle(
+            fontFamily = FontFamily.SansSerif,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 13.sp,
+            letterSpacing = 0.1.sp,
+        ),
     )
 }
 
 @Composable
-private fun Pill(text: String, background: Color, content: Color) {
-    Text(
-        text = text,
+private fun StatusPill(status: StepStatus, label: String?, custom: Boolean) {
+    val colors = LocalAppColors.current
+    val tone: StatusTone = if (custom) {
+        StatusTone(colors.accentSoft, colors.accent, colors.accent)
+    } else {
+        LocalStatusPalette.current.of(status)
+    }
+    Row(
         modifier = Modifier
             .clip(CircleShape)
-            .background(background)
-            .padding(horizontal = 7.dp, vertical = 4.dp),
-        color = content,
-        style = MaterialTheme.typography.labelSmall.copy(
-            fontSize = 9.sp,
-            lineHeight = 10.sp,
-            letterSpacing = 0.2.sp,
-        ),
-    )
+            .background(tone.background)
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(7.dp).clip(CircleShape).background(tone.dot))
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = label ?: status.label,
+            color = tone.content,
+            maxLines = 1,
+            style = TextStyle(
+                fontFamily = FontFamily.SansSerif,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp,
+                letterSpacing = 0.1.sp,
+            ),
+        )
+    }
 }

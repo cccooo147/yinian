@@ -53,6 +53,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
@@ -60,11 +61,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -101,6 +104,7 @@ fun HomeScreen(
     onDeleteGroup: (String) -> Unit,
     onOpenAppearance: () -> Unit,
     onGroupChanged: (String) -> Unit = {},
+    scrollMemory: HomeScrollMemory = remember { HomeScrollMemory() },
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalAppColors.current
@@ -123,17 +127,14 @@ fun HomeScreen(
         }
     }
 
-    val listStates = remember { mutableMapOf<String, LazyListState>() }
-    LaunchedEffect(columns) {
-        val alive = columns.mapTo(HashSet()) { it.id }
-        listStates.keys.retainAll(alive)
-    }
-    val activeState = listStates.getOrPut(currentGroup.id) { LazyListState() }
-    val scrolled by remember(activeState) {
+    var scrolled by remember { mutableStateOf(false) }
+    val activeState = scrollMemory.stateFor(currentGroup.id)
+    val scrolledNow by remember(activeState) {
         derivedStateOf {
             activeState.firstVisibleItemIndex > 0 || activeState.firstVisibleItemScrollOffset > 520
         }
     }
+    LaunchedEffect(scrolledNow) { scrolled = scrolledNow }
 
     var actionIdeaId by remember { mutableStateOf<String?>(null) }
     var pendingDelete by remember { mutableStateOf<Idea?>(null) }
@@ -151,38 +152,63 @@ fun HomeScreen(
             val groupIdeas = remember(ideas, group.id) {
                 ideas.filter { it.groupId == group.id }.ordered()
             }
-            val listState = listStates.getOrPut(group.id) { LazyListState() }
-            CompositionLocalProvider(LocalViewConfiguration provides listConfig) {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 148.dp),
-                ) {
-                    item(key = "header") {
-                        HomeTop(
-                            headline = group.title ?: appearance.headline,
-                            greeting = greeting,
-                            date = date,
-                            groups = columns,
-                            counts = counts,
-                            headerImage = group.imagePath,
-                            onOpenAppearance = onOpenAppearance,
-                        )
+            // State lives outside this screen, so returning from a detail page
+            // lands on the same spot.
+            val listState = scrollMemory.stateFor(group.id)
+            val density = LocalDensity.current
+            val blurSpan = appearance.blurDistance.dpAmount * density.density
+            val blurProgress by remember(listState, blurSpan, appearance.heroBlur) {
+                derivedStateOf<Float> {
+                    when {
+                        !appearance.heroBlur -> 0f
+                        listState.firstVisibleItemIndex > 0 -> 1f
+                        else -> (listState.firstVisibleItemScrollOffset / blurSpan).coerceIn(0f, 1f)
                     }
-                    if (groupIdeas.isEmpty()) {
-                        item(key = "empty") {
-                            Box(Modifier.padding(horizontal = 22.dp)) {
-                                EmptyState(onCreate = { onNewIdea(group.id) })
+                }
+            }
+            Box(Modifier.fillMaxSize()) {
+                HeroBackdrop(
+                    path = group.imagePath,
+                    progress = blurProgress,
+                    radius = appearance.blurLevel.radius,
+                )
+                CompositionLocalProvider(LocalViewConfiguration provides listConfig) {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = 148.dp),
+                    ) {
+                        item(key = "header") {
+                            HomeTop(
+                                headline = group.title ?: appearance.headline,
+                                greeting = greeting,
+                                date = date,
+                                groups = columns,
+                                counts = counts,
+                                onLightText = group.imagePath != null && appearance.cardGlass,
+                                topGap = appearance.topGap.dpAmount.dp,
+                                onOpenAppearance = onOpenAppearance,
+                            )
+                        }
+                        if (groupIdeas.isEmpty()) {
+                            item(key = "empty") {
+                                Box(Modifier.padding(horizontal = 22.dp)) {
+                                    EmptyState(onCreate = { onNewIdea(group.id) })
+                                }
                             }
                         }
-                    }
-                    items(items = groupIdeas, key = { it.id }) { idea ->
-                        IdeaCard(
-                            idea = idea,
-                            onOpen = { onOpenIdea(idea.id) },
-                            onLongPress = { actionIdeaId = idea.id },
-                            modifier = Modifier.padding(start = 22.dp, end = 22.dp, top = 16.dp),
-                        )
+                        items(items = groupIdeas, key = { it.id }) { idea ->
+                            IdeaCard(
+                                idea = idea,
+                                onOpen = { onOpenIdea(idea.id) },
+                                onLongPress = { actionIdeaId = idea.id },
+                                onDark = group.imagePath != null,
+                                glass = appearance.cardGlass,
+                                veilAlpha = appearance.cardVeil.percent / 100f,
+                                textShadow = appearance.textShadow,
+                                modifier = Modifier.padding(start = 22.dp, end = 22.dp, top = 16.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -209,9 +235,9 @@ fun HomeScreen(
                 .navigationBarsPadding()
                 .padding(end = 20.dp, bottom = 82.dp)
                 .size(54.dp)
-                .shadow(14.dp, CircleShape)
+                .shadow(16.dp, CircleShape, ambientColor = colors.accent.copy(alpha = 0.45f), spotColor = colors.accent.copy(alpha = 0.55f))
                 .clip(CircleShape)
-                .background(colors.ink)
+                .background(colors.accent)
                 .clickable { onNewIdea(currentGroup.id) },
             contentAlignment = Alignment.Center,
         ) {
@@ -315,6 +341,12 @@ fun HomeScreen(
     }
 }
 
+/** Per-group list positions owned by the app shell, so they survive leaving Home. */
+class HomeScrollMemory {
+    private val states = mutableMapOf<String, LazyListState>()
+    fun stateFor(groupId: String): LazyListState = states.getOrPut(groupId) { LazyListState() }
+}
+
 private data class GroupEditor(val target: Group?, val name: String)
 
 @Composable
@@ -324,47 +356,57 @@ private fun HomeTop(
     date: String,
     groups: List<Group>,
     counts: Map<String, Int>,
-    headerImage: String?,
+    onLightText: Boolean,
+    topGap: Dp,
     onOpenAppearance: () -> Unit,
 ) {
-    val image = LocalImageFile.current(headerImage)
-    Box(Modifier.fillMaxWidth()) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(horizontal = 22.dp),
+    ) {
+        HomeHeader(
+            headline = headline,
+            greeting = greeting,
+            date = date,
+            groups = groups,
+            counts = counts,
+            onLightText = onLightText,
+            topGap = topGap,
+            onOpenAppearance = onOpenAppearance,
+        )
+    }
+}
+
+/**
+ * The group's header image fills the whole page and stays put; the content
+ * scrolls over it. As the list moves the sharp image fades into a blurred copy,
+ * so the cards end up on a soft backdrop instead of a busy photo.
+ */
+@Composable
+private fun HeroBackdrop(path: String?, progress: Float, radius: Int) {
+    val colors = LocalAppColors.current
+    val image = LocalImageFile.current(path)
+    Box(Modifier.fillMaxSize().background(colors.paper)) {
         if (image != null) {
-            Box(Modifier.fillMaxWidth().height(315.dp)) {
+            AsyncImage(
+                model = image,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+            if (progress > 0.01f) {
                 AsyncImage(
                     model = image,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-                Box(
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .height(180.dp)
-                        .background(
-                            Brush.verticalGradient(
-                                0f to Color.Transparent,
-                                1f to Color.Black.copy(alpha = 0.55f),
-                            ),
-                        ),
+                    alpha = progress,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .blur((radius * progress).dp),
                 )
             }
-        }
-        Column(
-            Modifier
-                .statusBarsPadding()
-                .padding(horizontal = 22.dp),
-        ) {
-            HomeHeader(
-                headline = headline,
-                greeting = greeting,
-                date = date,
-                groups = groups,
-                counts = counts,
-                onLightText = image != null,
-                onOpenAppearance = onOpenAppearance,
-            )
         }
     }
 }
@@ -377,6 +419,7 @@ private fun HomeHeader(
     groups: List<Group>,
     counts: Map<String, Int>,
     onLightText: Boolean,
+    topGap: Dp,
     onOpenAppearance: () -> Unit,
 ) {
     val colors = LocalAppColors.current
@@ -388,7 +431,7 @@ private fun HomeHeader(
         null
     }
 
-    Column(Modifier.fillMaxWidth().padding(top = 36.dp, bottom = 18.dp)) {
+    Column(Modifier.fillMaxWidth().padding(top = 18.dp, bottom = topGap)) {
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
@@ -483,7 +526,7 @@ private fun GroupBar(
             .fillMaxWidth()
             .shadow(16.dp, RoundedCornerShape(28.dp))
             .clip(RoundedCornerShape(28.dp))
-            .background(colors.paper.copy(alpha = 0.97f))
+            .background(colors.paper.copy(alpha = 0.84f))
             .padding(horizontal = 10.dp, vertical = 7.dp)
             .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -586,9 +629,9 @@ private fun CompactHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(colors.paper.copy(alpha = 0.97f))
+            .background(colors.paper.copy(alpha = 0.84f))
             .statusBarsPadding()
-            .height(54.dp)
+            .height(44.dp)
             .padding(horizontal = 22.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
