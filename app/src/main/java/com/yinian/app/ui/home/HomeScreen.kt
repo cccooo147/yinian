@@ -87,6 +87,7 @@ import com.yinian.app.ui.components.todayLine
 import com.yinian.app.ui.theme.LocalAppColors
 import kotlinx.coroutines.launch
 import java.time.LocalTime
+import kotlin.math.roundToInt
 
 @Composable
 fun HomeScreen(
@@ -103,6 +104,7 @@ fun HomeScreen(
     onRenameGroup: (String, String) -> Unit,
     onDeleteGroup: (String) -> Unit,
     onOpenAppearance: () -> Unit,
+    onShiftIdea: (String, Int) -> Unit,
     onGroupChanged: (String) -> Unit = {},
     scrollMemory: HomeScrollMemory = remember { HomeScrollMemory() },
     modifier: Modifier = Modifier,
@@ -280,6 +282,20 @@ fun HomeScreen(
                     onEditIdea(idea.id)
                     actionIdeaId = null
                 },
+                canMoveUp = run {
+                    val list = ideas.filter { it.groupId == idea.groupId }.ordered()
+                    val from = list.indexOfFirst { it.id == idea.id }
+                    val pinned = list.count { it.pinned }
+                    if (idea.pinned) from > 0 else from > pinned
+                },
+                canMoveDown = run {
+                    val list = ideas.filter { it.groupId == idea.groupId }.ordered()
+                    val from = list.indexOfFirst { it.id == idea.id }
+                    val pinned = list.count { it.pinned }
+                    if (idea.pinned) from < pinned - 1 else from < list.lastIndex
+                },
+                onMoveUp = { onShiftIdea(idea.id, -1) },
+                onMoveDown = { onShiftIdea(idea.id, 1) },
                 onDelete = {
                     actionIdeaId = null
                     pendingDelete = idea
@@ -660,6 +676,10 @@ private fun IdeaActionSheet(
     onTogglePin: () -> Unit,
     onMoveToGroup: (String) -> Unit,
     onEdit: () -> Unit,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val colors = LocalAppColors.current
@@ -688,6 +708,25 @@ private fun IdeaActionSheet(
                 onClick = onTogglePin,
             )
             SheetAction(text = "编辑想法", onClick = onEdit)
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                MoveAction(
+                    text = "↑  上移一格",
+                    enabled = canMoveUp,
+                    modifier = Modifier.weight(1f),
+                    onClick = onMoveUp,
+                )
+                MoveAction(
+                    text = "↓  下移一格",
+                    enabled = canMoveDown,
+                    modifier = Modifier.weight(1f),
+                    onClick = onMoveDown,
+                )
+            }
             Text(
                 text = "放到哪一组",
                 modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
@@ -736,6 +775,27 @@ private fun SheetAction(text: String, danger: Boolean = false, onClick: () -> Un
             .padding(horizontal = 14.dp, vertical = 13.dp),
         color = if (danger) colors.accent else colors.ink,
         style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+    )
+}
+
+@Composable
+private fun MoveAction(
+    text: String,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val colors = LocalAppColors.current
+    Text(
+        text = text,
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (enabled) colors.surface else colors.surface.copy(alpha = 0.4f))
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(vertical = 11.dp),
+        color = if (enabled) colors.ink else colors.muted.copy(alpha = 0.45f),
+        textAlign = TextAlign.Center,
+        style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
     )
 }
 

@@ -22,9 +22,8 @@ enum class ThemeMode {
 /** How much air sits between the headline block and the first card. */
 enum class TopGap(val dpAmount: Int) {
     SMALL(40),
-    MEDIUM(96),
-    LARGE(180),
-    LARGER(300),
+    MEDIUM(300),
+    LARGE(420),
 }
 
 /** How light the see-through strip under a card's cover is. */

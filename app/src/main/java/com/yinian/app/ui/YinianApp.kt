@@ -142,6 +142,7 @@ fun YinianApp(viewModel: AppViewModel, state: AppUiState) {
                         onRenameGroup = { groupId, name -> viewModel.renameGroup(groupId, name) },
                         onDeleteGroup = viewModel::deleteGroup,
                         onOpenAppearance = { showAppearance = true },
+                        onShiftIdea = viewModel::shiftIdea,
                         onGroupChanged = { currentGroupId = it },
                         scrollMemory = homeScroll,
                     )

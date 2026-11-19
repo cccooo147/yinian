@@ -293,7 +293,6 @@ fun AppearanceSheet(
                     TopGap.SMALL to "小",
                     TopGap.MEDIUM to "中",
                     TopGap.LARGE to "大",
-                    TopGap.LARGER to "更大",
                 ),
                 selected = appearance.topGap,
                 onSelect = { onUpdate(appearance.copy(topGap = it)) },

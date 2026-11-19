@@ -19,6 +19,7 @@ import com.yinian.app.data.defaultGroups
 import com.yinian.app.data.newIdea
 import com.yinian.app.data.newGroup
 import com.yinian.app.data.newStep
+import com.yinian.app.data.ordered
 import com.yinian.app.data.orderedGroups
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -175,7 +176,41 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun togglePinned(ideaId: String) {
-        updateIdea(ideaId) { idea -> idea.copy(pinned = !idea.pinned, updatedAt = now()) }
+        val ideas = _state.value.ideas
+        val idea = ideas.firstOrNull { it.id == ideaId } ?: return
+        if (!idea.pinned) {
+            // Pin: sit on top of the pinned block.
+            val topOrder = ideas.filter { it.groupId == idea.groupId && it.pinned }
+                .minOfOrNull { it.orderIndex } ?: (idea.orderIndex + 1)
+            updateIdea(ideaId) {
+                it.copy(pinned = true, orderIndex = topOrder - 1, updatedAt = now())
+            }
+        } else {
+            // Unpin: land at the very top of the normal block, not back in place.
+            val normalTop = ideas.filter { it.groupId == idea.groupId && !it.pinned && it.id != ideaId }
+                .minOfOrNull { it.orderIndex } ?: (idea.orderIndex + 1)
+            updateIdea(ideaId) {
+                it.copy(pinned = false, orderIndex = normalTop - 1, updatedAt = now())
+            }
+        }
+    }
+
+    /** Moves an idea one slot up or down inside its pinned / normal block. */
+    fun shiftIdea(ideaId: String, delta: Int) {
+        val ideas = _state.value.ideas
+        val idea = ideas.firstOrNull { it.id == ideaId } ?: return
+        val list = ideas.filter { it.groupId == idea.groupId }.ordered()
+        val pinnedCount = list.count { it.pinned }
+        val from = list.indexOfFirst { it.id == ideaId }
+        if (from < 0) return
+        val to = if (idea.pinned) {
+            (from + delta).coerceIn(0, (pinnedCount - 1).coerceAtLeast(0))
+        } else {
+            (from + delta).coerceIn(pinnedCount, list.lastIndex)
+        }
+        if (to == from) return
+        val next = list.toMutableList().apply { add(to, removeAt(from)) }
+        reorderIdeas(next.map { it.id })
     }
 
     // ---- groups ------------------------------------------------------------
@@ -211,6 +246,22 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun moveIdeaToGroup(ideaId: String, groupId: String) {
         if (_state.value.groups.none { it.id == groupId }) return
         updateIdea(ideaId) { it.copy(groupId = groupId, updatedAt = now()) }
+    }
+
+    /**
+     * Rewrites the manual order for one list: [orderedIds] is the sequence the UI
+     * shows. Timestamps are left alone so the sort does not fall back to "recently
+     * touched" when indices tie.
+     */
+    fun reorderIdeas(orderedIds: List<String>) {
+        if (orderedIds.size < 2) return
+        val rank = orderedIds.withIndex().associate { (index, id) -> id to index }
+        commitIdeas { ideas ->
+            ideas.map { idea ->
+                val next = rank[idea.id]
+                if (next == null || idea.orderIndex == next) idea else idea.copy(orderIndex = next)
+            }
+        }
     }
 
     fun updateGroupTitle(groupId: String, title: String) {

@@ -2,6 +2,7 @@ package com.yinian.app.ui.home
 
 import android.graphics.BlurMaskFilter
 import android.graphics.Paint
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -31,6 +32,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.lerp
@@ -172,9 +174,7 @@ fun IdeaCard(
                     ),
                 )
                 if (idea.pinned) {
-                    Spacer(Modifier.width(8.dp))
-                    PinnedPill(light)
-                    Spacer(Modifier.width(4.dp))
+                    Spacer(Modifier.width(6.dp))
                 }
                 if (focus != null) {
                     if (!idea.pinned) Spacer(Modifier.width(8.dp))
@@ -190,6 +190,7 @@ fun IdeaCard(
                 Modifier
                     .padding(top = 14.dp)
                     .height(IntrinsicSize.Min),
+                verticalAlignment = Alignment.Top,
             ) {
                 Box(
                     Modifier
@@ -224,28 +225,38 @@ fun IdeaCard(
                         ),
                     )
                 }
+                if (idea.pinned) {
+                    Spacer(Modifier.width(8.dp))
+                    Box(Modifier.offset(y = (-12).dp)) { PinnedMark() }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun PinnedPill(light: Boolean) {
-    Text(
-        text = "置顶",
-        modifier = Modifier
+private fun PinnedMark() {
+    Box(
+        Modifier
+            .size(20.dp)
             .clip(CircleShape)
-            .background(Color.Black.copy(alpha = 0.72f))
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        color = Color(0xFFE7C173),
-        maxLines = 1,
-        style = TextStyle(
-            fontFamily = FontFamily.SansSerif,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 13.sp,
-            letterSpacing = 0.1.sp,
-        ),
-    )
+            .background(Color.Black.copy(alpha = 0.42f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Canvas(Modifier.size(width = 9.dp, height = 12.dp)) {
+            val w = size.width
+            val h = size.height
+            val ribbon = Path().apply {
+                moveTo(0f, 0f)
+                lineTo(w, 0f)
+                lineTo(w, h)
+                lineTo(w / 2f, h * 0.72f)
+                lineTo(0f, h)
+                close()
+            }
+            drawPath(ribbon, Color(0xFFE7C173))
+        }
+    }
 }
 
 @Composable
@@ -260,20 +271,21 @@ private fun StatusPill(status: StepStatus, label: String?, custom: Boolean) {
         modifier = Modifier
             .clip(CircleShape)
             .background(tone.background)
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = 7.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(7.dp).clip(CircleShape).background(tone.dot))
-        Spacer(Modifier.width(6.dp))
+        Box(Modifier.size(4.dp).clip(CircleShape).background(tone.dot))
+        Spacer(Modifier.width(4.dp))
         Text(
             text = label ?: status.label,
             color = tone.content,
             maxLines = 1,
             style = TextStyle(
                 fontFamily = FontFamily.SansSerif,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                fontSize = 9.sp,
                 letterSpacing = 0.1.sp,
+                lineHeight = 10.sp,
             ),
         )
     }

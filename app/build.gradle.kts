@@ -1,4 +1,4 @@
-import java.util.Properties
+﻿import java.util.Properties
 
 plugins {
     id("com.android.application")
@@ -22,8 +22,8 @@ android {
         applicationId = "com.yinian.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 23
-        versionName = "3.8.8"
+        versionCode = 24
+        versionName = "3.9.0"
 
         vectorDrawables {
             useSupportLibrary = true
@@ -109,3 +109,4 @@ dependencies {
     testImplementation("app.cash.paparazzi:paparazzi:1.3.5")
     testImplementation("org.robolectric:robolectric:4.14.1")
 }
+
