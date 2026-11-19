@@ -5,7 +5,10 @@
 > 当前版本：**3.9.0**（versionCode 24）· Android 8.0+（minSdk 26）
 
 <p align="center">
-  <img src="docs/screenshots/showcase.webp" width="100%" alt="一念：首页、卡片列表、分组底栏" />
+  <img src="docs/screenshots/home.webp" width="24%" alt="首页：整屏头图与标题" />
+  <img src="docs/screenshots/home-scrolled.webp" width="24%" alt="上滑：头图退成背景" />
+  <img src="docs/screenshots/cards.webp" width="24%" alt="想法卡片列表" />
+  <img src="docs/screenshots/detail.webp" width="24%" alt="详情页：小步与进度" />
 </p>
 
 ## 它做什么
