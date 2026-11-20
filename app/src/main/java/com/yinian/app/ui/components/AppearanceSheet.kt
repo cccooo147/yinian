@@ -82,6 +82,8 @@ fun AppearanceSheet(
     onPickHomeImage: (Uri, CropSpec) -> Unit,
     onRemoveHomeImage: () -> Unit,
     onReset: () -> Unit,
+    onExportBackup: (Uri) -> Unit,
+    onImportBackup: (Uri) -> Unit,
 ) {
     val colors = LocalAppColors.current
     val context = LocalContext.current
@@ -93,6 +95,12 @@ fun AppearanceSheet(
     val picker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia(),
     ) { uri -> if (uri != null) pendingHome = uri }
+    val createBackup = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/zip"),
+    ) { uri -> if (uri != null) onExportBackup(uri) }
+    val openBackup = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri -> if (uri != null) onImportBackup(uri) }
 
     fun commitAndDismiss() {
         val clean = headline.trim()
@@ -355,6 +363,43 @@ fun AppearanceSheet(
                 enabled = appearance.heroBlur,
                 onSelect = { onUpdate(appearance.copy(blurDistance = it)) },
             )
+
+            SheetLabel(label = "备份", hint = "包含全部想法、分组、外观和图片")
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = "导出备份",
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(colors.surface)
+                        .clickable {
+                            val name = "yinian-backup-" +
+                                java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.US)
+                                    .format(java.util.Date()) + ".zip"
+                            createBackup.launch(name)
+                        }
+                        .padding(vertical = 11.dp),
+                    color = colors.ink,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
+                )
+                Text(
+                    text = "从备份恢复",
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(colors.surface)
+                        .clickable {
+                            openBackup.launch(
+                                arrayOf("application/zip", "application/octet-stream"),
+                            )
+                        }
+                        .padding(vertical = 11.dp),
+                    color = colors.ink,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
+                )
+            }
 
             Text(
                 text = "恢复默认外观",

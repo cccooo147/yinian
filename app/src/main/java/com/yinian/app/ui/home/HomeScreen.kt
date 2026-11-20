@@ -75,6 +75,7 @@ import com.yinian.app.data.Appearance
 import com.yinian.app.data.DEFAULT_GROUP_ID
 import com.yinian.app.data.Group
 import com.yinian.app.data.Idea
+import com.yinian.app.data.TopGap
 import com.yinian.app.data.defaultGroups
 import com.yinian.app.data.ordered
 import com.yinian.app.data.orderedGroups
@@ -105,6 +106,7 @@ fun HomeScreen(
     onDeleteGroup: (String) -> Unit,
     onOpenAppearance: () -> Unit,
     onShiftIdea: (String, Int) -> Unit,
+    initialGroupId: String? = null,
     onGroupChanged: (String) -> Unit = {},
     scrollMemory: HomeScrollMemory = remember { HomeScrollMemory() },
     modifier: Modifier = Modifier,
@@ -116,7 +118,13 @@ fun HomeScreen(
     val columns = remember(groups) { groups.ifEmpty { defaultGroups() }.orderedGroups() }
     val counts = remember(ideas) { ideas.groupingBy { it.groupId }.eachCount() }
 
-    val pagerState = rememberPagerState { columns.size }
+    // Rebuilt from scratch when coming back from a detail page, so the pager has
+    // to start on the group the user was actually looking at.
+    val startPage = remember(columns, initialGroupId) {
+        val found = columns.indexOfFirst { it.id == initialGroupId }
+        if (found >= 0) found else 0
+    }
+    val pagerState = rememberPagerState(initialPage = startPage) { columns.size }
     val page = pagerState.currentPage.coerceIn(0, columns.lastIndex)
     val currentGroup = columns[page]
 
@@ -139,6 +147,9 @@ fun HomeScreen(
     LaunchedEffect(scrolledNow) { scrolled = scrolledNow }
 
     var actionIdeaId by remember { mutableStateOf<String?>(null) }
+    // The tighter the headline gap, the earlier the cards sit over the photo, so
+    // the smallest gap keeps a little baseline blur for legibility.
+    val baseBlur = if (appearance.topGap == TopGap.SMALL) 0.45f else 0f
     var pendingDelete by remember { mutableStateOf<Idea?>(null) }
     var groupEditor by remember { mutableStateOf<GroupEditor?>(null) }
 
@@ -159,13 +170,14 @@ fun HomeScreen(
             val listState = scrollMemory.stateFor(group.id)
             val density = LocalDensity.current
             val blurSpan = appearance.blurDistance.dpAmount * density.density
-            val blurProgress by remember(listState, blurSpan, appearance.heroBlur) {
+            val blurProgress by remember(listState, blurSpan, appearance.heroBlur, baseBlur) {
                 derivedStateOf<Float> {
-                    when {
+                    val ramp = when {
                         !appearance.heroBlur -> 0f
                         listState.firstVisibleItemIndex > 0 -> 1f
                         else -> (listState.firstVisibleItemScrollOffset / blurSpan).coerceIn(0f, 1f)
                     }
+                    baseBlur + (1f - baseBlur) * ramp
                 }
             }
             Box(Modifier.fillMaxSize()) {

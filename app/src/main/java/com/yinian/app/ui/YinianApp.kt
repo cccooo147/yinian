@@ -1,5 +1,6 @@
 package com.yinian.app.ui
 
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -143,6 +144,7 @@ fun YinianApp(viewModel: AppViewModel, state: AppUiState) {
                         onDeleteGroup = viewModel::deleteGroup,
                         onOpenAppearance = { showAppearance = true },
                         onShiftIdea = viewModel::shiftIdea,
+                        initialGroupId = currentGroupId,
                         onGroupChanged = { currentGroupId = it },
                         scrollMemory = homeScroll,
                     )
@@ -272,6 +274,24 @@ fun YinianApp(viewModel: AppViewModel, state: AppUiState) {
                 onReset = {
                     viewModel.resetAppearance()
                     viewModel.updateGroupTitle(currentGroupId, "")
+                },
+                onExportBackup = { uri ->
+                    viewModel.exportBackup(uri) { ok ->
+                        Toast.makeText(
+                            context,
+                            if (ok) "备份已导出" else "导出失败",
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                    }
+                },
+                onImportBackup = { uri ->
+                    viewModel.importBackup(uri) { error ->
+                        Toast.makeText(
+                            context,
+                            error ?: "已从备份恢复",
+                            Toast.LENGTH_LONG,
+                        ).show()
+                    }
                 },
             )
         }

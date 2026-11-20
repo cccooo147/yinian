@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.yinian.app.data.Appearance
+import com.yinian.app.data.BackupArchive
 import com.yinian.app.data.CardTint
 import com.yinian.app.data.CropSpec
 import com.yinian.app.data.DEFAULT_GROUP_ID
@@ -108,6 +109,81 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun imageFile(path: String?): File? = imageStore.resolve(path)
+
+    // ---- backup ------------------------------------------------------------
+
+    /** Packs everything into [uri]. The current data is never touched. */
+    fun exportBackup(uri: Uri, onResult: (Boolean) -> Unit) {
+        val snapshot = _state.value
+        viewModelScope.launch(Dispatchers.IO) {
+            val ok = runCatching {
+                getApplication<android.app.Application>().contentResolver
+                    .openOutputStream(uri)?.use { out ->
+                        BackupArchive.write(
+                            context = getApplication(),
+                            ideas = snapshot.ideas,
+                            groups = snapshot.groups,
+                            appearance = snapshot.appearance,
+                            out = out,
+                        )
+                    } ?: error("无法写入")
+            }.isSuccess
+            withContext(Dispatchers.Main) { onResult(ok) }
+        }
+    }
+
+    /**
+     * Replaces everything with the bundle. The data that was here first is saved
+     * to a cache zip, so a wrong restore can still be undone by hand.
+     */
+    fun importBackup(uri: Uri, onResult: (String?) -> Unit) {
+        val snapshot = _state.value
+        viewModelScope.launch(Dispatchers.IO) {
+            val error = runCatching {
+                val app = getApplication<android.app.Application>()
+                val payload = app.contentResolver.openInputStream(uri)?.use { input ->
+                    BackupArchive.read(input)
+                } ?: error("打不开这个文件")
+
+                // Safety net before we overwrite anything.
+                runCatching {
+                    val rescue = File(app.cacheDir, "before-restore.zip")
+                    rescue.outputStream().use { out ->
+                        BackupArchive.write(
+                            context = app,
+                            ideas = snapshot.ideas,
+                            groups = snapshot.groups,
+                            appearance = snapshot.appearance,
+                            out = out,
+                        )
+                    }
+                }
+
+                val mediaDir = File(app.filesDir, "media").apply { mkdirs() }
+                payload.media.forEach { (name, bytes) ->
+                    File(mediaDir, name).writeBytes(bytes)
+                }
+
+                val groups = payload.groups.ifEmpty { defaultGroups() }.orderedGroups()
+                val ideas = payload.ideas.map { idea ->
+                    if (groups.any { it.id == idea.groupId }) idea
+                    else idea.copy(groupId = groups.first().id)
+                }
+                store.saveGroups(groups)
+                store.saveIdeas(ideas)
+                store.saveAppearance(payload.appearance)
+                withContext(Dispatchers.Main) {
+                    _state.value = _state.value.copy(
+                        ideas = ideas,
+                        groups = groups,
+                        appearance = payload.appearance,
+                    )
+                }
+                null
+            }.getOrElse { it.message ?: "恢复失败" }
+            withContext(Dispatchers.Main) { onResult(error) }
+        }
+    }
 
     // ---- ideas -------------------------------------------------------------
 
