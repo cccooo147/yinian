@@ -82,9 +82,11 @@ fun DetailScreen(
 ) {
     val colors = LocalAppColors.current
     val context = LocalContext.current
-    val openLink: (String) -> Unit = { uri ->
-        if (!openExternalLink(context, uri)) {
-            Toast.makeText(context, "没有应用能打开这个链接", Toast.LENGTH_SHORT).show()
+    val openLink: (String) -> Unit = remember(context) {
+        { uri ->
+            if (!openExternalLink(context, uri)) {
+                Toast.makeText(context, "没有应用能打开这个链接", Toast.LENGTH_SHORT).show()
+            }
         }
     }
     val coverAspect = 1.6f

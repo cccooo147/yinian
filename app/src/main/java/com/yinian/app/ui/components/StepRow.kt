@@ -37,8 +37,8 @@ fun StepRow(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onOpenLink: () -> Unit,
-    onLinkMenu: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onLinkMenu: () -> Unit = {},
 ) {
     val colors = LocalAppColors.current
     val shape = RoundedCornerShape(22.dp)

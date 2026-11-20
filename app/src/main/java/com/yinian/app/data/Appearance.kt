@@ -3,6 +3,7 @@ package com.yinian.app.data
 import androidx.compose.runtime.Immutable
 
 const val DEFAULT_HEADLINE = "把想法，\n做成一件事。"
+const val DEFAULT_SLOGAN = "想法不用完整，先记下来。"
 
 enum class PaletteId {
     PAPER,
@@ -42,6 +43,13 @@ enum class BlurLevel(val radius: Int) {
     MAX(40),
 }
 
+/** How far the header image is blurred before the list is scrolled at all. */
+enum class InitialBlur(val amount: Float) {
+    OFF(0f),
+    LIGHT(0.35f),
+    FULL(1f),
+}
+
 /** How strongly the card's title and step line are shadowed. */
 enum class TextShadowLevel(val blur: Float, val alpha: Float) {
     NONE(0f, 0f),
@@ -61,6 +69,9 @@ data class Appearance(
     val palette: PaletteId = PaletteId.PAPER,
     val mode: ThemeMode = ThemeMode.SYSTEM,
     val headline: String = DEFAULT_HEADLINE,
+    /** Empty string hides the line under the headline. */
+    val slogan: String = DEFAULT_SLOGAN,
+    val showStats: Boolean = true,
     val homeImagePath: String? = null,
     /** Labels the user invented with "自设状态", offered again next time. */
     val customStatuses: List<String> = emptyList(),
@@ -70,6 +81,7 @@ data class Appearance(
     val cardGlass: Boolean = true,
     val textShadow: TextShadowLevel = TextShadowLevel.SOFT,
     val heroBlur: Boolean = true,
+    val initialBlur: InitialBlur = InitialBlur.OFF,
     val blurLevel: BlurLevel = BlurLevel.MEDIUM,
     val blurDistance: BlurDistance = BlurDistance.MEDIUM,
 )

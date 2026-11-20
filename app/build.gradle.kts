@@ -22,8 +22,8 @@ android {
         applicationId = "com.yinian.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 25
-        versionName = "3.9.1"
+        versionCode = 26
+        versionName = "3.9.2"
 
         vectorDrawables {
             useSupportLibrary = true
@@ -109,5 +109,6 @@ dependencies {
     testImplementation("app.cash.paparazzi:paparazzi:1.3.5")
     testImplementation("org.robolectric:robolectric:4.14.1")
 }
+
 
 

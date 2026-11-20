@@ -17,6 +17,8 @@ data class Group(
     val imagePath: String? = null,
     /** Home headline for this column; null falls back to [Appearance.headline]. */
     val title: String? = null,
+    /** Line under the headline; null falls back to [Appearance.slogan], "" hides it. */
+    val slogan: String? = null,
 )
 
 @Immutable

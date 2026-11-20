@@ -264,6 +264,8 @@ fun YinianApp(viewModel: AppViewModel, state: AppUiState) {
                 homeImagePath = currentGroup?.imagePath,
                 groupTitle = currentGroup?.title ?: state.appearance.headline,
                 groupName = currentGroup?.name ?: "当前",
+                groupSlogan = currentGroup?.slogan ?: state.appearance.slogan,
+                onUpdateGroupSlogan = { text -> viewModel.updateGroupSlogan(currentGroupId, text) },
                 imageBusy = state.imageBusyKey == "group:$currentGroupId" ||
                     (currentGroupId == DEFAULT_GROUP_ID && state.imageBusyKey == "home"),
                 onDismiss = { showAppearance = false },
@@ -282,6 +284,12 @@ fun YinianApp(viewModel: AppViewModel, state: AppUiState) {
                             if (ok) "备份已导出" else "导出失败",
                             Toast.LENGTH_SHORT,
                         ).show()
+                    }
+                },
+                backupBusy = state.backupBusy,
+                onCleanupImages = {
+                    viewModel.cleanupUnusedImages { removed ->
+                        Toast.makeText(context, "清理了 $removed 张图片", Toast.LENGTH_SHORT).show()
                     }
                 },
                 onImportBackup = { uri ->
@@ -308,6 +316,10 @@ fun YinianApp(viewModel: AppViewModel, state: AppUiState) {
                     ?: state.groups.firstOrNull()?.id
                     ?: DEFAULT_GROUP_ID,
                 onDismiss = {
+                    // Dropping the editor must also drop the picture picked for an
+                    // idea that was never created, or it leaks and rides along on
+                    // the next new idea.
+                    viewModel.clearDraftCover()
                     editorOpen = false
                     editingId = null
                     draftGroupId = null

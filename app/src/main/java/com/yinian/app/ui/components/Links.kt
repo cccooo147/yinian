@@ -225,8 +225,8 @@ fun copyLink(context: Context, raw: String): Boolean {
 fun StepLinkBar(
     uri: String,
     onClick: () -> Unit,
-    onLongClick: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onLongClick: () -> Unit = {},
 ) {
     val colors = LocalAppColors.current
     Row(

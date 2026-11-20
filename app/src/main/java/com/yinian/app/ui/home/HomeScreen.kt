@@ -61,6 +61,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.ViewConfiguration
@@ -86,6 +87,7 @@ import com.yinian.app.ui.components.greetingFor
 import com.yinian.app.ui.components.statsLine
 import com.yinian.app.ui.components.todayLine
 import com.yinian.app.ui.theme.LocalAppColors
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalTime
 import kotlin.math.roundToInt
@@ -106,15 +108,13 @@ fun HomeScreen(
     onDeleteGroup: (String) -> Unit,
     onOpenAppearance: () -> Unit,
     onShiftIdea: (String, Int) -> Unit,
+    modifier: Modifier = Modifier,
     initialGroupId: String? = null,
     onGroupChanged: (String) -> Unit = {},
     scrollMemory: HomeScrollMemory = remember { HomeScrollMemory() },
-    modifier: Modifier = Modifier,
 ) {
     val colors = LocalAppColors.current
     val scope = rememberCoroutineScope()
-    val greeting = remember { greetingFor(LocalTime.now().hour) }
-    val date = remember { todayLine() }
     val columns = remember(groups) { groups.ifEmpty { defaultGroups() }.orderedGroups() }
     val counts = remember(ideas) { ideas.groupingBy { it.groupId }.eachCount() }
 
@@ -137,19 +137,36 @@ fun HomeScreen(
         }
     }
 
-    var scrolled by remember { mutableStateOf(false) }
     val activeState = scrollMemory.stateFor(currentGroup.id)
-    val scrolledNow by remember(activeState) {
+    val scrolled by remember(activeState) {
         derivedStateOf {
             activeState.firstVisibleItemIndex > 0 || activeState.firstVisibleItemScrollOffset > 520
         }
     }
-    LaunchedEffect(scrolledNow) { scrolled = scrolledNow }
+
+    // Drop the scroll state of groups that no longer exist.
+    LaunchedEffect(columns) {
+        scrollMemory.retain(columns.mapTo(HashSet()) { it.id })
+    }
+
+    // What the greeting is depends on the hour; recompute when the clock rolls
+    // over instead of freezing at first composition.
+    var greeting by remember { mutableStateOf(greetingFor(LocalTime.now().hour)) }
+    var date by remember { mutableStateOf(todayLine()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(60_000)
+            val hour = LocalTime.now().hour
+            val nextGreeting = greetingFor(hour)
+            val nextDate = todayLine()
+            if (nextGreeting != greeting) greeting = nextGreeting
+            if (nextDate != date) date = nextDate
+        }
+    }
 
     var actionIdeaId by remember { mutableStateOf<String?>(null) }
-    // The tighter the headline gap, the earlier the cards sit over the photo, so
-    // the smallest gap keeps a little baseline blur for legibility.
-    val baseBlur = if (appearance.topGap == TopGap.SMALL) 0.45f else 0f
+    // Independent of the headline gap now: the user picks it next to the blur options.
+    val baseBlur = appearance.initialBlur.amount
     var pendingDelete by remember { mutableStateOf<Idea?>(null) }
     var groupEditor by remember { mutableStateOf<GroupEditor?>(null) }
 
@@ -199,6 +216,8 @@ fun HomeScreen(
                                 date = date,
                                 groups = columns,
                                 counts = counts,
+                                slogan = group.slogan ?: appearance.slogan,
+                                showStats = appearance.showStats,
                                 onLightText = group.imagePath != null && appearance.cardGlass,
                                 topGap = appearance.topGap.dpAmount.dp,
                                 onOpenAppearance = onOpenAppearance,
@@ -373,6 +392,9 @@ fun HomeScreen(
 class HomeScrollMemory {
     private val states = mutableMapOf<String, LazyListState>()
     fun stateFor(groupId: String): LazyListState = states.getOrPut(groupId) { LazyListState() }
+    fun retain(ids: Set<String>) {
+        states.keys.retainAll(ids)
+    }
 }
 
 private data class GroupEditor(val target: Group?, val name: String)
@@ -384,6 +406,8 @@ private fun HomeTop(
     date: String,
     groups: List<Group>,
     counts: Map<String, Int>,
+    slogan: String,
+    showStats: Boolean,
     onLightText: Boolean,
     topGap: Dp,
     onOpenAppearance: () -> Unit,
@@ -400,6 +424,8 @@ private fun HomeTop(
             date = date,
             groups = groups,
             counts = counts,
+            slogan = slogan,
+            showStats = showStats,
             onLightText = onLightText,
             topGap = topGap,
             onOpenAppearance = onOpenAppearance,
@@ -409,8 +435,11 @@ private fun HomeTop(
 
 /**
  * The group's header image fills the whole page and stays put; the content
- * scrolls over it. As the list moves the sharp image fades into a blurred copy,
- * so the cards end up on a soft backdrop instead of a busy photo.
+ * scrolls over it, and a blurred copy fades in as the list moves.
+ *
+ * The blur radius is constant per setting: changing the alpha of an existing
+ * blurred layer is cheap, while feeding the scroll position into the radius
+ * rebuilt a full-screen RenderEffect on every frame.
  */
 @Composable
 private fun HeroBackdrop(path: String?, progress: Float, radius: Int) {
@@ -424,7 +453,7 @@ private fun HeroBackdrop(path: String?, progress: Float, radius: Int) {
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
             )
-            if (progress > 0.01f) {
+            if (radius > 0) {
                 AsyncImage(
                     model = image,
                     contentDescription = null,
@@ -432,7 +461,7 @@ private fun HeroBackdrop(path: String?, progress: Float, radius: Int) {
                     alpha = progress,
                     modifier = Modifier
                         .fillMaxSize()
-                        .blur((radius * progress).dp),
+                        .blur(radius.dp),
                 )
             }
         }
@@ -446,6 +475,8 @@ private fun HomeHeader(
     date: String,
     groups: List<Group>,
     counts: Map<String, Int>,
+    slogan: String,
+    showStats: Boolean,
     onLightText: Boolean,
     topGap: Dp,
     onOpenAppearance: () -> Unit,
@@ -466,18 +497,20 @@ private fun HomeHeader(
         ) {
             AppearanceButton(onClick = onOpenAppearance)
         }
-        Text(
-            text = headline,
-            modifier = Modifier.padding(top = 24.dp),
-            color = content,
-            style = TextStyle(
-                fontFamily = FontFamily.Serif,
-                fontSize = 40.sp,
-                lineHeight = 46.sp,
-                letterSpacing = (-1.8).sp,
-                shadow = shadow,
-            ),
-        )
+        if (headline.isNotBlank()) {
+            Text(
+                text = headline,
+                modifier = Modifier.padding(top = 24.dp),
+                color = content,
+                style = TextStyle(
+                    fontFamily = FontFamily.Serif,
+                    fontSize = 40.sp,
+                    lineHeight = 46.sp,
+                    letterSpacing = (-1.8).sp,
+                    shadow = shadow,
+                ),
+            )
+        }
         Row(
             Modifier.padding(top = 7.dp),
             verticalAlignment = Alignment.Bottom,
@@ -502,36 +535,40 @@ private fun HomeHeader(
                 ),
             )
         }
-        Text(
-            text = "想法不用完整，先记下来。",
-            modifier = Modifier.padding(top = 7.dp),
-            color = secondary,
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontSize = 13.sp,
-                lineHeight = 20.sp,
-                shadow = shadow,
-            ),
-        )
-        Row(
-            modifier = Modifier.padding(top = 7.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                Modifier
-                    .size(5.dp)
-                    .clip(CircleShape)
-                    .background(colors.accent),
-            )
-            Spacer(Modifier.width(7.dp))
+        if (slogan.isNotBlank()) {
             Text(
-                text = statsLine(groups.size, counts.values.sum()),
+                text = slogan,
+                modifier = Modifier.padding(top = 7.dp),
                 color = secondary,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 12.sp,
-                    letterSpacing = 0.2.sp,
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontSize = 13.sp,
+                    lineHeight = 20.sp,
                     shadow = shadow,
                 ),
             )
+        }
+        if (showStats) {
+            Row(
+                modifier = Modifier.padding(top = 7.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    Modifier
+                        .size(5.dp)
+                        .clip(CircleShape)
+                        .background(colors.accent),
+                )
+                Spacer(Modifier.width(7.dp))
+                Text(
+                    text = statsLine(groups.size, counts.values.sum()),
+                    color = secondary,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 12.sp,
+                        letterSpacing = 0.2.sp,
+                        shadow = shadow,
+                    ),
+                )
+            }
         }
     }
 }

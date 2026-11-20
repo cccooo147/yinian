@@ -23,6 +23,7 @@ import com.yinian.app.data.newStep
 import com.yinian.app.data.ordered
 import com.yinian.app.data.orderedGroups
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -115,6 +116,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     /** Packs everything into [uri]. The current data is never touched. */
     fun exportBackup(uri: Uri, onResult: (Boolean) -> Unit) {
         val snapshot = _state.value
+        _state.update { it.copy(backupBusy = true) }
         viewModelScope.launch(Dispatchers.IO) {
             val ok = runCatching {
                 getApplication<android.app.Application>().contentResolver
@@ -128,7 +130,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                         )
                     } ?: error("无法写入")
             }.isSuccess
-            withContext(Dispatchers.Main) { onResult(ok) }
+            withContext(Dispatchers.Main) {
+                _state.update { it.copy(backupBusy = false) }
+                onResult(ok)
+            }
         }
     }
 
@@ -138,11 +143,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
      */
     fun importBackup(uri: Uri, onResult: (String?) -> Unit) {
         val snapshot = _state.value
+        _state.update { it.copy(backupBusy = true) }
         viewModelScope.launch(Dispatchers.IO) {
+            val tempDir = File(getApplication<android.app.Application>().cacheDir, "restore-tmp")
             val error = runCatching {
                 val app = getApplication<android.app.Application>()
                 val payload = app.contentResolver.openInputStream(uri)?.use { input ->
-                    BackupArchive.read(input)
+                    BackupArchive.read(input, tempDir)
                 } ?: error("打不开这个文件")
 
                 // Safety net before we overwrite anything.
@@ -160,18 +167,44 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 val mediaDir = File(app.filesDir, "media").apply { mkdirs() }
-                payload.media.forEach { (name, bytes) ->
-                    File(mediaDir, name).writeBytes(bytes)
+                val incoming = payload.mediaDir.listFiles()?.filter { it.isFile } ?: emptyList()
+                val kept = incoming.mapTo(HashSet()) { it.name }
+                // Images the bundle does not carry would otherwise linger forever.
+                mediaDir.listFiles()?.forEach { old ->
+                    if (old.isFile && old.name !in kept) runCatching { old.delete() }
+                }
+                incoming.forEach { file ->
+                    runCatching { file.copyTo(File(mediaDir, file.name), overwrite = true) }
                 }
 
-                val groups = payload.groups.ifEmpty { defaultGroups() }.orderedGroups()
-                val ideas = payload.ideas.map { idea ->
-                    if (groups.any { it.id == idea.groupId }) idea
-                    else idea.copy(groupId = groups.first().id)
+                val groupsRaw = payload.groups.ifEmpty { defaultGroups() }.orderedGroups()
+                // An idea pointing at an image the bundle did not carry would show
+                // an empty frame forever, so drop the dangling reference instead.
+                fun present(path: String?): Boolean =
+                    path != null && File(app.filesDir, path).exists()
+
+                val groups = groupsRaw.map { group ->
+                    if (group.imagePath != null && !present(group.imagePath)) {
+                        group.copy(imagePath = null)
+                    } else {
+                        group
+                    }
                 }
-                store.saveGroups(groups)
-                store.saveIdeas(ideas)
-                store.saveAppearance(payload.appearance)
+                val ideas = payload.ideas.map { idea ->
+                    val inGroup = if (groups.any { it.id == idea.groupId }) idea
+                    else idea.copy(groupId = groups.first().id)
+                    if (inGroup.coverPath != null && !present(inGroup.coverPath)) {
+                        inGroup.copy(coverPath = null)
+                    } else {
+                        inGroup
+                    }
+                }
+                // Go through the same conflated channels as normal edits: a write
+                // queued before the restore would otherwise land afterwards and
+                // put the old data back.
+                groupWrites.trySend(groups)
+                ideaWrites.trySend(ideas)
+                appearanceWrites.trySend(payload.appearance)
                 withContext(Dispatchers.Main) {
                     _state.value = _state.value.copy(
                         ideas = ideas,
@@ -181,7 +214,29 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 null
             }.getOrElse { it.message ?: "恢复失败" }
-            withContext(Dispatchers.Main) { onResult(error) }
+            tempDir.deleteRecursively()
+            withContext(Dispatchers.Main) {
+                _state.update { it.copy(backupBusy = false) }
+                onResult(error)
+            }
+        }
+    }
+
+    /** Deletes media files nothing points at any more; returns how many went. */
+    fun cleanupUnusedImages(onDone: (Int) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val snapshot = _state.value
+            val used = buildSet {
+                snapshot.ideas.forEach { idea -> idea.coverPath?.let { add(it) } }
+                snapshot.groups.forEach { group -> group.imagePath?.let { add(it) } }
+                snapshot.draftCover?.let { add(it) }
+            }
+            val mediaDir = File(getApplication<android.app.Application>().filesDir, "media")
+            var removed = 0
+            mediaDir.listFiles()?.forEach { file ->
+                if (file.isFile && "media/${file.name}" !in used && file.delete()) removed++
+            }
+            withContext(Dispatchers.Main) { onDone(removed) }
         }
     }
 
@@ -212,14 +267,21 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         if (_state.value.imageBusyKey != null) return
         _state.update { it.copy(imageBusyKey = DRAFT_KEY) }
         viewModelScope.launch {
-            val path = imageStore.importCropped(uri, crop)
-            withContext(Dispatchers.Main) {
-                if (path != null) {
-                    val old = _state.value.draftCover
-                    _state.update { it.copy(draftCover = path) }
-                    old?.let { deleteFiles(listOf(it)) }
+            try {
+                val path = imageStore.importCropped(uri, crop)
+                withContext(Dispatchers.Main) {
+                    if (path != null) {
+                        val old = _state.value.draftCover
+                        _state.update { it.copy(draftCover = path) }
+                        old?.let { deleteFiles(listOf(it)) }
+                    }
                 }
-                _state.update { it.copy(imageBusyKey = null) }
+            } finally {
+                // Without this an exception (OOM, revoked URI) left the flag set
+                // and every later import was silently ignored.
+                withContext(NonCancellable) {
+                    _state.update { it.copy(imageBusyKey = null) }
+                }
             }
         }
     }
@@ -340,11 +402,22 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun updateGroupSlogan(groupId: String, slogan: String) {
+        val clean = slogan.trim().take(24)
+        commitGroups { groups ->
+            groups.map { group ->
+                if (group.id == groupId) group.copy(slogan = clean) else group
+            }
+        }
+    }
+
     fun updateGroupTitle(groupId: String, title: String) {
+        // Empty stays empty: that means "this group shows no headline", while a
+        // null title falls back to the reading of the default one.
         val clean = title.trim().take(28)
         commitGroups { groups ->
             groups.map { group ->
-                if (group.id == groupId) group.copy(title = clean.ifBlank { null }) else group
+                if (group.id == groupId) group.copy(title = clean) else group
             }
         }
     }
@@ -353,23 +426,28 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         if (_state.value.imageBusyKey != null) return
         _state.update { it.copy(imageBusyKey = "group:$groupId") }
         viewModelScope.launch {
-            val path = imageStore.importCropped(uri, crop, 1600)
-            withContext(Dispatchers.Main) {
-                if (path != null) {
-                    val group = _state.value.groups.firstOrNull { it.id == groupId }
-                    if (group == null) {
-                        deleteFiles(listOf(path))
-                    } else {
-                        val old = group.imagePath
-                        commitGroups { groups ->
-                            groups.map { item ->
-                                if (item.id == groupId) item.copy(imagePath = path) else item
+            try {
+                val path = imageStore.importCropped(uri, crop, 1600)
+                withContext(Dispatchers.Main) {
+                    if (path != null) {
+                        val group = _state.value.groups.firstOrNull { it.id == groupId }
+                        if (group == null) {
+                            deleteFiles(listOf(path))
+                        } else {
+                            val old = group.imagePath
+                            commitGroups { groups ->
+                                groups.map { item ->
+                                    if (item.id == groupId) item.copy(imagePath = path) else item
+                                }
                             }
+                            old?.let { deleteFiles(listOf(it)) }
                         }
-                        old?.let { deleteFiles(listOf(it)) }
                     }
                 }
-                _state.update { it.copy(imageBusyKey = null) }
+            } finally {
+                withContext(NonCancellable) {
+                    _state.update { it.copy(imageBusyKey = null) }
+                }
             }
         }
     }
@@ -562,19 +640,24 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         if (_state.value.imageBusyKey != null) return
         _state.update { it.copy(imageBusyKey = "cover:$ideaId") }
         viewModelScope.launch {
-            val path = imageStore.importCropped(uri, crop)
-            withContext(Dispatchers.Main) {
-                if (path != null) {
-                    val idea = _state.value.ideas.firstOrNull { it.id == ideaId }
-                    if (idea == null) {
-                        deleteFiles(listOf(path))
-                    } else {
-                        val old = idea.coverPath
-                        updateIdea(ideaId) { it.copy(coverPath = path, updatedAt = now()) }
-                        old?.let { deleteFiles(listOf(it)) }
+            try {
+                val path = imageStore.importCropped(uri, crop)
+                withContext(Dispatchers.Main) {
+                    if (path != null) {
+                        val idea = _state.value.ideas.firstOrNull { it.id == ideaId }
+                        if (idea == null) {
+                            deleteFiles(listOf(path))
+                        } else {
+                            val old = idea.coverPath
+                            updateIdea(ideaId) { it.copy(coverPath = path, updatedAt = now()) }
+                            old?.let { deleteFiles(listOf(it)) }
+                        }
                     }
                 }
-                _state.update { it.copy(imageBusyKey = null) }
+            } finally {
+                withContext(NonCancellable) {
+                    _state.update { it.copy(imageBusyKey = null) }
+                }
             }
         }
     }

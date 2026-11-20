@@ -23,6 +23,8 @@ data class AppUiState(
     val appearance: Appearance = Appearance(),
     val pendingUndo: PendingStepDeletion? = null,
     val imageBusyKey: String? = null,
+    /** True while a backup zip is being written or read. */
+    val backupBusy: Boolean = false,
     /** Cover chosen in the editor before the idea exists. */
     val draftCover: String? = null,
 )

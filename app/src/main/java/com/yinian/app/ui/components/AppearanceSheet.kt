@@ -56,6 +56,7 @@ import com.yinian.app.ui.theme.Palettes
 import com.yinian.app.data.BlurDistance
 import com.yinian.app.data.BlurLevel
 import com.yinian.app.data.CardVeil
+import com.yinian.app.data.InitialBlur
 import com.yinian.app.data.TopGap
 import com.yinian.app.data.TextShadowLevel
 
@@ -75,6 +76,8 @@ fun AppearanceSheet(
     homeImagePath: String?,
     groupTitle: String,
     groupName: String,
+    groupSlogan: String,
+    onUpdateGroupSlogan: (String) -> Unit,
     imageBusy: Boolean,
     onDismiss: () -> Unit,
     onUpdate: (Appearance) -> Unit,
@@ -84,6 +87,8 @@ fun AppearanceSheet(
     onReset: () -> Unit,
     onExportBackup: (Uri) -> Unit,
     onImportBackup: (Uri) -> Unit,
+    backupBusy: Boolean,
+    onCleanupImages: () -> Unit,
 ) {
     val colors = LocalAppColors.current
     val context = LocalContext.current
@@ -224,6 +229,36 @@ fun AppearanceSheet(
                 )
             }
 
+            SheetLabel(label = "本组标语", hint = "只影响「$groupName」· 留空则不显示")
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(colors.surface)
+                    .border(1.dp, colors.hairline, RoundedCornerShape(14.dp))
+                    .padding(horizontal = 13.dp, vertical = 11.dp),
+            ) {
+                androidx.compose.foundation.text.BasicTextField(
+                    value = groupSlogan,
+                    onValueChange = { onUpdateGroupSlogan(it.take(24)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    textStyle = androidx.compose.ui.text.TextStyle(
+                        color = colors.ink,
+                        fontSize = 12.sp,
+                        lineHeight = 20.sp,
+                        fontFamily = FontFamily.SansSerif,
+                    ),
+                    cursorBrush = androidx.compose.ui.graphics.SolidColor(colors.accent),
+                )
+            }
+
+            CardOptionRow(
+                label = "统计",
+                options = listOf(true to "显示", false to "隐藏"),
+                selected = appearance.showStats,
+                onSelect = { onUpdate(appearance.copy(showStats = it)) },
+            )
+
             SheetLabel(label = "配色", hint = "六套纸色")
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Palettes.all.chunked(3).forEach { row ->
@@ -341,6 +376,16 @@ fun AppearanceSheet(
                 onSelect = { onUpdate(appearance.copy(heroBlur = it)) },
             )
             CardOptionRow(
+                label = "初始虚化",
+                options = listOf(
+                    InitialBlur.OFF to "关",
+                    InitialBlur.LIGHT to "一点",
+                    InitialBlur.FULL to "满",
+                ),
+                selected = appearance.initialBlur,
+                onSelect = { onUpdate(appearance.copy(initialBlur = it)) },
+            )
+            CardOptionRow(
                 label = "虚化程度",
                 options = listOf(
                     BlurLevel.LIGHT to "轻",
@@ -364,22 +409,25 @@ fun AppearanceSheet(
                 onSelect = { onUpdate(appearance.copy(blurDistance = it)) },
             )
 
-            SheetLabel(label = "备份", hint = "包含全部想法、分组、外观和图片")
+            SheetLabel(
+                label = "备份",
+                hint = if (backupBusy) "正在处理，请不要退出…" else "包含全部想法、分组、外观和图片",
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
                     text = "导出备份",
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(colors.surface)
-                        .clickable {
+                        .background(if (backupBusy) colors.surface.copy(alpha = 0.45f) else colors.surface)
+                        .clickable(enabled = !backupBusy) {
                             val name = "yinian-backup-" +
                                 java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.US)
                                     .format(java.util.Date()) + ".zip"
                             createBackup.launch(name)
                         }
                         .padding(vertical = 11.dp),
-                    color = colors.ink,
+                    color = if (backupBusy) colors.muted.copy(alpha = 0.5f) else colors.ink,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
                 )
@@ -388,18 +436,31 @@ fun AppearanceSheet(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(colors.surface)
-                        .clickable {
+                        .background(if (backupBusy) colors.surface.copy(alpha = 0.45f) else colors.surface)
+                        .clickable(enabled = !backupBusy) {
                             openBackup.launch(
                                 arrayOf("application/zip", "application/octet-stream"),
                             )
                         }
                         .padding(vertical = 11.dp),
-                    color = colors.ink,
+                    color = if (backupBusy) colors.muted.copy(alpha = 0.5f) else colors.ink,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
                 )
             }
+            Text(
+                text = "清理无用图片",
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(colors.paperDeep)
+                    .clickable(enabled = !backupBusy, onClick = onCleanupImages)
+                    .padding(vertical = 10.dp),
+                color = colors.muted,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+            )
 
             Text(
                 text = "恢复默认外观",

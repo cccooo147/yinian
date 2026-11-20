@@ -114,7 +114,18 @@ object JournalJson {
                             orderIndex = item.optInt("order", i),
                             createdAt = item.optLong("createdAt", System.currentTimeMillis()),
                             imagePath = item.optNullableString("imagePath"),
-                            title = item.optNullableString("title"),
+                            // "" is meaningful here: it means "this group has no
+                            // headline", while null falls back to the default one.
+                            title = if (item.has("title") && !item.isNull("title")) {
+                                item.optString("title").trim()
+                            } else {
+                                null
+                            },
+                            slogan = if (item.has("slogan") && !item.isNull("slogan")) {
+                                item.optString("slogan").trim()
+                            } else {
+                                null
+                            },
                         ),
                     )
                 }
@@ -137,6 +148,7 @@ object JournalJson {
                             put("createdAt", group.createdAt)
                             put("imagePath", group.imagePath ?: JSONObject.NULL)
                             put("title", group.title ?: JSONObject.NULL)
+                            put("slogan", group.slogan ?: JSONObject.NULL)
                         },
                     )
                 }
@@ -156,7 +168,14 @@ object JournalJson {
             Appearance(
                 palette = enumOr(root.optString("palette"), PaletteId.PAPER),
                 mode = enumOr(root.optString("mode"), ThemeMode.SYSTEM),
-                headline = root.optString("headline").ifBlank { DEFAULT_HEADLINE },
+                // "" means "no headline"; only a missing field falls back to the default.
+                headline = if (root.has("headline")) {
+                    root.optString("headline")
+                } else {
+                    DEFAULT_HEADLINE
+                },
+                slogan = if (root.has("slogan")) root.optString("slogan") else DEFAULT_SLOGAN,
+                showStats = root.optBoolean("showStats", true),
                 // v2 kept a decorative motif image; the closest v3 slot is the home banner.
                 homeImagePath = root.optNullableString("homeImagePath")
                     ?: root.optNullableString("motifImagePath"),
@@ -175,6 +194,7 @@ object JournalJson {
                     }
                 },
                 heroBlur = root.optBoolean("heroBlur", true),
+                initialBlur = enumOr(root.optString("initialBlur"), InitialBlur.OFF),
                 blurLevel = enumOr(root.optString("blurLevel"), BlurLevel.MEDIUM),
                 blurDistance = enumOr(root.optString("blurDistance"), BlurDistance.MEDIUM),
             )
@@ -186,6 +206,8 @@ object JournalJson {
         put("palette", appearance.palette.name)
         put("mode", appearance.mode.name)
         put("headline", appearance.headline)
+        put("slogan", appearance.slogan)
+        put("showStats", appearance.showStats)
         put("homeImagePath", appearance.homeImagePath ?: JSONObject.NULL)
         put(
             "customStatuses",
@@ -198,6 +220,7 @@ object JournalJson {
         put("cardGlass", appearance.cardGlass)
         put("textShadow", appearance.textShadow.name)
         put("heroBlur", appearance.heroBlur)
+        put("initialBlur", appearance.initialBlur.name)
         put("blurLevel", appearance.blurLevel.name)
         put("blurDistance", appearance.blurDistance.name)
     }.toString()

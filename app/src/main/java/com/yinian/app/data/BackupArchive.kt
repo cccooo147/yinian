@@ -14,8 +14,8 @@ data class BackupPayload(
     val ideas: List<Idea>,
     val groups: List<Group>,
     val appearance: Appearance,
-    /** file name (no directory) -> bytes, everything under files/media. */
-    val media: Map<String, ByteArray>,
+    /** Scratch directory holding the extracted images; the caller cleans it up. */
+    val mediaDir: File,
 )
 
 /**
@@ -71,13 +71,19 @@ object BackupArchive {
         }
     }
 
-    /** Throws [IllegalStateException] with a user-facing message when unusable. */
-    fun read(input: InputStream): BackupPayload {
+    /**
+     * Streams the bundle into [tempDir] instead of holding every image in memory:
+     * a photo-heavy backup would otherwise be an out-of-memory waiting to happen.
+     * Throws [IllegalStateException] with a user-facing message when unusable.
+     */
+    fun read(input: InputStream, tempDir: File): BackupPayload {
+        tempDir.deleteRecursively()
+        tempDir.mkdirs()
+
         var manifest: JSONObject? = null
         var ideasRaw: String? = null
         var groupsRaw: String? = null
         var appearanceRaw: String? = null
-        val media = LinkedHashMap<String, ByteArray>()
 
         ZipInputStream(input.buffered()).use { zip ->
             while (true) {
@@ -90,7 +96,7 @@ object BackupArchive {
                     entry.name.startsWith(MEDIA_PREFIX) -> {
                         val name = entry.name.removePrefix(MEDIA_PREFIX)
                         if (name.isNotBlank() && !name.contains('/') && !name.contains('\\')) {
-                            media[name] = zip.readBytes()
+                            File(tempDir, name).outputStream().use { out -> zip.copyTo(out) }
                         }
                     }
                 }
@@ -110,7 +116,7 @@ object BackupArchive {
             ideas = ideas,
             groups = groups,
             appearance = appearanceRaw?.let { JournalJson.decodeAppearance(it) } ?: Appearance(),
-            media = media,
+            mediaDir = tempDir,
         )
     }
 
