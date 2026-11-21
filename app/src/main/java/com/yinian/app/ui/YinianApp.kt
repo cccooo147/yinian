@@ -144,6 +144,8 @@ fun YinianApp(viewModel: AppViewModel, state: AppUiState) {
                         onDeleteGroup = viewModel::deleteGroup,
                         onOpenAppearance = { showAppearance = true },
                         onShiftIdea = viewModel::shiftIdea,
+                        onSortGroupByStatus = viewModel::sortGroupByStatus,
+                        onReorderIdeas = viewModel::reorderIdeas,
                         initialGroupId = currentGroupId,
                         onGroupChanged = { currentGroupId = it },
                         scrollMemory = homeScroll,

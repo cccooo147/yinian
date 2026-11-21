@@ -2,7 +2,7 @@
 
 一本只存在你手机里的想法手记。用 Kotlin + Jetpack Compose 写的本地 App，**没有网络权限，数据不出设备**。
 
-> 当前版本：**3.9.2**（versionCode 26）· Android 8.0+（minSdk 26）
+> 当前版本：**3.9.3**（versionCode 27）· Android 8.0+（minSdk 26）
 
 <p align="center">
   <img src="docs/screenshots/home.webp" width="24%" alt="首页：整屏头图与标题" />

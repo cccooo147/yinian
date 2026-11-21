@@ -5,6 +5,7 @@ import android.graphics.Paint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -188,7 +189,7 @@ fun IdeaCard(
 
             Row(
                 Modifier
-                    .padding(top = 14.dp)
+                    .padding(top = 10.dp)
                     .height(IntrinsicSize.Min),
                 verticalAlignment = Alignment.Top,
             ) {
@@ -207,20 +208,21 @@ fun IdeaCard(
                         style = TextStyle(
                             fontFamily = FontFamily.SansSerif,
                             fontSize = 11.sp,
+                            lineHeight = 15.sp,
                             letterSpacing = 0.6.sp,
                         ),
                     )
                     Text(
                         text = line,
-                        modifier = Modifier.padding(top = 4.dp),
+                        modifier = Modifier.padding(top = 3.dp),
                         color = body,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         style = TextStyle(
                             fontFamily = FontFamily.SansSerif,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 15.sp,
-                            lineHeight = 21.sp,
+                            lineHeight = 20.sp,
                             shadow = titleShadow,
                         ),
                     )
@@ -271,11 +273,11 @@ private fun StatusPill(status: StepStatus, label: String?, custom: Boolean) {
         modifier = Modifier
             .clip(CircleShape)
             .background(tone.background)
-            .padding(horizontal = 7.dp, vertical = 5.dp),
+            .padding(horizontal = 10.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(4.dp).clip(CircleShape).background(tone.dot))
-        Spacer(Modifier.width(4.dp))
+        Box(Modifier.size(5.dp).clip(CircleShape).background(tone.dot))
+        Spacer(Modifier.width(5.dp))
         Text(
             text = label ?: status.label,
             color = tone.content,
@@ -283,9 +285,9 @@ private fun StatusPill(status: StepStatus, label: String?, custom: Boolean) {
             style = TextStyle(
                 fontFamily = FontFamily.SansSerif,
                 fontWeight = FontWeight.Medium,
-                fontSize = 9.sp,
+                fontSize = 11.sp,
                 letterSpacing = 0.1.sp,
-                lineHeight = 10.sp,
+                lineHeight = 14.sp,
             ),
         )
     }

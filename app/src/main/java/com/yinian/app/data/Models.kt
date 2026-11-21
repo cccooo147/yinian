@@ -58,9 +58,9 @@ data class Idea(
 }
 
 enum class StepStatus(val label: String) {
-    THINKING("还在考虑中"),
+    THINKING("还在考虑"),
     DOING("正在做"),
-    WAITING("等待机会"),
+    WAITING("等待时机"),
     DONE("已实现"),
     FAILED("失败"),
 }

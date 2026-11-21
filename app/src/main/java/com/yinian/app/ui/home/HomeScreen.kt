@@ -108,6 +108,8 @@ fun HomeScreen(
     onDeleteGroup: (String) -> Unit,
     onOpenAppearance: () -> Unit,
     onShiftIdea: (String, Int) -> Unit,
+    onSortGroupByStatus: (String) -> Unit,
+    onReorderIdeas: (List<String>) -> Unit,
     modifier: Modifier = Modifier,
     initialGroupId: String? = null,
     onGroupChanged: (String) -> Unit = {},
@@ -165,12 +167,22 @@ fun HomeScreen(
     }
 
     var actionIdeaId by remember { mutableStateOf<String?>(null) }
+    // groupId -> order before the one-shot status sort, for the undo bar.
+    var sortUndo by remember { mutableStateOf<Pair<String, List<String>>?>(null) }
     // Independent of the headline gap now: the user picks it next to the blur options.
     val baseBlur = appearance.initialBlur.amount
     var pendingDelete by remember { mutableStateOf<Idea?>(null) }
     var groupEditor by remember { mutableStateOf<GroupEditor?>(null) }
 
     LaunchedEffect(currentGroup.id) { onGroupChanged(currentGroup.id) }
+
+    // The undo bar for a status sort disappears on its own after five seconds.
+    LaunchedEffect(sortUndo) {
+        if (sortUndo != null) {
+            delay(5000)
+            sortUndo = null
+        }
+    }
 
     Box(modifier.fillMaxSize().background(colors.paper)) {
         HorizontalPager(
@@ -277,6 +289,38 @@ fun HomeScreen(
             PlusGlyph(Modifier.size(20.dp), colors.paper)
         }
 
+        sortUndo?.let { (groupId, previous) ->
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(bottom = 78.dp)
+                    .clip(CircleShape)
+                    .background(colors.ink)
+                    .padding(start = 16.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "已按状态排序",
+                    color = colors.paper,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                )
+                Spacer(Modifier.width(14.dp))
+                Text(
+                    text = "撤销",
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .clickable {
+                            onReorderIdeas(previous)
+                            sortUndo = null
+                        }
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    color = colors.accent,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                )
+            }
+        }
+
         GroupBar(
             groups = columns,
             counts = counts,
@@ -327,6 +371,12 @@ fun HomeScreen(
                 },
                 onMoveUp = { onShiftIdea(idea.id, -1) },
                 onMoveDown = { onShiftIdea(idea.id, 1) },
+                onSortByStatus = {
+                    val previous = ideas.filter { it.groupId == idea.groupId }.ordered().map { it.id }
+                    onSortGroupByStatus(idea.groupId)
+                    sortUndo = idea.groupId to previous
+                    actionIdeaId = null
+                },
                 onDelete = {
                     actionIdeaId = null
                     pendingDelete = idea
@@ -729,6 +779,7 @@ private fun IdeaActionSheet(
     canMoveDown: Boolean,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
+    onSortByStatus: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val colors = LocalAppColors.current
@@ -807,7 +858,9 @@ private fun IdeaActionSheet(
                 }
             }
             Spacer(Modifier.height(18.dp))
+            Box(Modifier.fillMaxWidth().height(1.dp).background(colors.hairline.copy(alpha = 0.6f)))
             SheetAction(text = "删除这个想法", danger = true, onClick = onDelete)
+            SheetAction(text = "按状态重排本组", onClick = onSortByStatus)
         }
     }
 }

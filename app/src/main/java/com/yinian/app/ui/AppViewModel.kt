@@ -333,8 +333,35 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /** Moves an idea one slot up or down inside its pinned / normal block. */
-    fun shiftIdea(ideaId: String, delta: Int) {
+    /**
+     * One-shot reorder of a group by the status of each card's current step:
+     * doing, waiting, no status / custom, thinking, failed, done.
+     * Pinned cards stay on top; within a bucket the manual order is kept.
+     */
+    fun sortGroupByStatus(groupId: String) {
+        val list = _state.value.ideas.filter { it.groupId == groupId }.ordered()
+        if (list.size < 2) return
+
+        fun rank(idea: Idea): Int {
+            val step = idea.currentStep
+                ?: idea.steps.firstOrNull { it.status != StepStatus.DONE }
+                ?: idea.steps.lastOrNull()
+            if (step == null || step.customStatus != null) return 2
+            return when (step.status) {
+                StepStatus.DOING -> 0
+                StepStatus.WAITING -> 1
+                StepStatus.THINKING -> 3
+                StepStatus.FAILED -> 4
+                StepStatus.DONE -> 5
+            }
+        }
+
+        val pinned = list.filter { it.pinned }
+        val rest = list.filterNot { it.pinned }.sortedBy { rank(it) }
+        reorderIdeas((pinned + rest).map { it.id })
+    }
+
+    /** Moves an idea one slot up or down inside its pinned / normal block. */    fun shiftIdea(ideaId: String, delta: Int) {
         val ideas = _state.value.ideas
         val idea = ideas.firstOrNull { it.id == ideaId } ?: return
         val list = ideas.filter { it.groupId == idea.groupId }.ordered()

@@ -3,6 +3,7 @@ package com.yinian.app.ui.detail
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -90,6 +91,7 @@ fun StepViewSheet(
     total: Int,
     isCurrent: Boolean,
     onEdit: () -> Unit,
+    onToggleCurrent: () -> Unit,
     onOpenLink: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -179,6 +181,10 @@ fun StepViewSheet(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             SheetAction(text = "编辑", primary = true, onClick = onEdit)
+            SheetAction(
+                text = if (isCurrent) "取消当前" else "设为当前",
+                onClick = onToggleCurrent,
+            )
             SheetAction(text = "关闭", onClick = onDismiss)
         }
     }
